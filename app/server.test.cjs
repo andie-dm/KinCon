@@ -2,6 +2,25 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const { createServer } = require('./server');
 
+test('encoded null bytes return 400 without crashing the server', { timeout: 5000 }, async (t) => {
+  const server = createServer();
+  await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve));
+  t.after(() => new Promise((resolve) => server.close(resolve)));
+  const base = `http://127.0.0.1:${server.address().port}`;
+
+  for (const file of ['/assets/%00', '/assets/app%00.js']) {
+    for (const method of ['GET', 'HEAD']) {
+      const response = await fetch(`${base}${file}`, { method });
+      assert.equal(response.status, 400);
+      assert.equal(await response.text(), method === 'HEAD' ? '' : 'bad path\n');
+    }
+  }
+
+  const health = await fetch(`${base}/healthz`);
+  assert.equal(health.status, 200);
+  assert.equal(await health.text(), 'ok\n');
+});
+
 test('production server keeps probes and starter API, and restricts static file access', async (t) => {
   const server = createServer();
   await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve));

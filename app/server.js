@@ -48,6 +48,10 @@ function createServer() {
         res.writeHead(400, { 'content-type': 'text/plain' });
         return res.end('bad path\n');
       }
+      if (pathname.includes('\0')) {
+        res.writeHead(400, { 'content-type': 'text/plain' });
+        return res.end('bad path\n');
+      }
       const file = path.resolve(staticRoot, pathname === '/' ? 'index.html' : `.${pathname}`);
       if (!file.startsWith(`${staticRoot}${path.sep}`)) {
         res.writeHead(404, { 'content-type': 'text/plain' });
