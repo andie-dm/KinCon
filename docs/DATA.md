@@ -108,7 +108,7 @@ Retrieval uses the `rrf` retriever (`rank_window_size` 50, `rank_constant` 60) o
 
 | Behaviour | Implementation |
 |---|---|
-| Actor | Bearer token or `demo_session` HttpOnly cookie. With `DEMO_SESSION_TOKENS` set, only a configured token maps to Riley or Jules; without it (open demo mode) the cookie names one of the two fictional identities. Never read from the body or path |
+| Actor | Bearer token or `demo_session` HttpOnly cookie. With `DEMO_SESSION_TOKENS` set, only a configured token maps to Riley or Jules; without it, `DEMO_PUBLIC_SESSIONS=true` must be explicitly enabled for the cookie to name one of the fictional identities. Never read from the body or path |
 | Swipe idempotency | Painless `_update`: same direction → `noop`, so `effective_at`, `revision` and the tag snapshot don't move. Affinity and recency count it once |
 | Changed swipe | Direction flips: `revision+1`, `effective_at` advances, tag snapshot refreshed. A flip to left clears the private opener |
 | Near-real-time | Action writes use `refresh=wait_for`, so an immediate reload sees the swipe. Reciprocity uses real-time `GET` of the reverse action's deterministic ID |

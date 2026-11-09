@@ -2,6 +2,7 @@ import React, { useEffect, useId, useMemo, useRef, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import { cards, defaultProfile, findCard, identities, intents, preferences } from './fixtures.mjs';
 import { actionKey, conversation, feed, freshState, incomingRequests, introFor, isMatched, isSaved, MAX_MESSAGE_LENGTH, parseState, requestStatus, respond, sendMessage, STORAGE_KEY, swipe } from './demo.mjs';
+import { api, loadApp, normalizeCard } from './api.mjs';
 import './styles.css';
 
 function Icon({ name, size = 20, ...props }) {
@@ -108,13 +109,9 @@ function ChatWindow({ me, other, thread, draft, onSend }) {
 }
 
 function App() {
-  const [initial] = useState(() => {
-    try { return { state: parseState(localStorage.getItem(STORAGE_KEY)), error: '' }; }
-    catch (error) { return { state: freshState(), error: `Cannot load local demo: ${error.message}` }; }
-  });
-  const [state, setState] = useState(initial.state);
-  const [error, setError] = useState(initial.error);
-  const [actor, setActor] = useState('alex');
+  const [state, setState] = useState(() => ({ ...freshState(), cards: [], feeds: {}, savedCards: [], notifications: [] }));
+  const [error, setError] = useState('');
+  const [actor, setActor] = useState('riley');
   const [view, setView] = useState('discover');
   const [deck, setDeck] = useState('research');
   const [format, setFormat] = useState('All');
@@ -125,29 +122,48 @@ function App() {
   const [drag, setDrag] = useState(0);
   const [pinned, setPinned] = useState(null);
   const gesture = useRef(null);
-  const identity = identities.find(({ id }) => id === actor);
+  const identity = identities.find(({ id }) => id === actor) || { id: actor, name: actor === 'riley' ? 'Riley Tan' : 'Jules Marlow', initials: actor[0].toUpperCase(), color: 'mint' };
   const profile = state.profiles[actor] || defaultProfile;
-  const upcoming = useMemo(() => feed(state, actor, deck, format, paperId), [state, actor, deck, format, paperId]);
+  const upcoming = useMemo(() => (state.feeds[deck] || []).filter((card) => format === 'All' || card.format === format), [state.feeds, deck, format]);
   const current = pinned || upcoming[0];
   // Connected people include requests you accepted, not only people you asked.
-  const matches = cards.filter((card) => card.type === 'people' && card.id !== actor && isMatched(state, actor, card.id));
-  const saved = [...cards.filter((card) => card.type !== 'people' && isSaved(state, actor, card)), ...matches];
-  const pending = cards.filter((card) => card.type === 'people' && isSaved(state, actor, card) && !isMatched(state, actor, card.id));
-  const requests = incomingRequests(state, actor).map((id) => findCard('people', id)).filter(Boolean);
-  const joined = cards.filter((card) => card.type === 'groups' && state.joins[actionKey(actor, 'groups', card.id)]);
-  const modalMatched = modal?.card?.type === 'people' && isMatched(state, actor, modal.card.id);
+  const cardsForState = state.cards || [];
+  const matches = (state.savedCards || []).filter((card) => card.type === 'people');
+  const saved = state.savedCards || [];
+  const pending = [];
+  const requests = (state.notifications || []).map((item) => normalizeCard(item));
+  const joined = saved.filter((card) => card.type === 'groups' && card.joined);
+  const isRemoteSaved = (card) => saved.some((savedCard) => savedCard.type === card.type && savedCard.id === card.id);
+  const isRemoteMatched = (card) => card?.type === 'people' && matches.some((match) => match.id === card.id);
+  const modalMatched = modal?.card?.type === 'people' && isRemoteMatched(modal.card);
 
-  function commit(next) {
-    if (error) return false;
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
-      setState(next);
-      return true;
-    } catch (failure) {
-      setError(`Your changes could not be saved: ${failure.message}. Enable browser storage before continuing.`);
-      return false;
-    }
+  async function refresh(forActor = actor) {
+    const [me, research, people, groups, savedData, notifications] = await Promise.all([
+      api.me(), api.feed('research'), api.feed('people'), api.feed('groups'), api.saved(), api.notifications(),
+    ]);
+    const all = [...research.cards, ...people.cards, ...groups.cards].map(normalizeCard);
+    setState((previous) => ({ ...previous, profiles: { ...previous.profiles, [forActor]: {
+      intent: me.intent || defaultProfile.intent, offers: (me.offers || []).join(', '), asks: (me.asks || []).join(', '),
+      preference: me.conversation_preference || defaultProfile.preference,
+    } }, cards: all, feeds: { research: research.cards.map(normalizeCard), people: people.cards.map(normalizeCard), groups: groups.cards.map(normalizeCard) },
+    savedCards: [...savedData.research, ...savedData.groups, ...savedData.matches].map(normalizeCard), notifications: notifications.requests || [] }));
   }
+  function commit(next) { setState(next); return true; }
+  useEffect(() => { loadApp().then((loaded) => {
+    setActor(loaded.identity);
+    setState((previous) => ({ ...previous, profiles: { ...previous.profiles, [loaded.identity]: {
+      intent: loaded.profile.intent || defaultProfile.intent, offers: (loaded.profile.offers || []).join(', '), asks: (loaded.profile.asks || []).join(', '),
+      preference: loaded.profile.conversation_preference || defaultProfile.preference,
+    } }, cards: loaded.cards, feeds: { research: loaded.cards.filter((c) => c.type === 'research'), people: loaded.cards.filter((c) => c.type === 'people'), groups: loaded.cards.filter((c) => c.type === 'groups') }, savedCards: loaded.saved, notifications: loaded.notifications.requests || [] }));
+  }).catch((failure) => setError(`Backend unavailable: ${failure.message}`)); }, []);
+  useEffect(() => {
+    if (modal?.kind !== 'chat') return;
+    api.messages(modal.card.id).then((result) => setState((previous) => ({
+      ...previous, messages: { ...previous.messages, [`${actor}:${modal.card.id}`]: result.messages.map((message) => ({
+        from: message.sender_profile_id === actor ? actor : modal.card.id, body: message.body, at: message.created_at,
+      })) },
+    }))).catch(() => {});
+  }, [modal?.kind, modal?.card?.id, actor]);
 
   useEffect(() => {
     function sync(event) {
@@ -167,18 +183,11 @@ function App() {
 
   function act(direction, card = current) {
     if (!card || error) return;
-    const next = swipe(state, actor, card, direction);
-    if (!commit(next)) return;
-    setLastAction({ actor, card });
-    setPinned(null);
-    setDrag(0);
-    if (direction === 'right' && card.type === 'people') {
-      const first = card.title.split(' ')[0];
-      if (isMatched(next, actor, card.id)) setModal({ kind: 'match', card });
-      setNotice(isMatched(next, actor, card.id) ? `You and ${first} are both interested. Your chat is open.` : `Request sent. ${first} will be notified and can accept or decline.`);
-    } else {
-      setNotice(direction === 'left' ? 'Passed. On to your next discovery.' : card.type === 'groups' ? 'Meetup saved. Join separately to confirm attendance.' : 'Research saved to your collection.');
-    }
+    const type = card.type === 'research' ? 'papers' : card.type === 'people' ? 'people' : 'groups';
+    api.swipe(type, card.id, direction, paperId ? { paperId } : {}).then(() => refresh()).then(() => {
+      setLastAction({ actor, card }); setPinned(null); setDrag(0);
+      setNotice(direction === 'left' ? 'Passed. On to your next discovery.' : card.type === 'groups' ? 'Meetup saved. Join separately to confirm attendance.' : 'Saved on the server.');
+    }).catch((failure) => setError(failure.message));
   }
 
   useEffect(() => {
@@ -207,56 +216,53 @@ function App() {
   }
 
   function shareBuddy(card) {
-    if (!commit({ ...state, buddies: { ...state.buddies, [actionKey(actor, 'research', card.id)]: true } })) return;
-    setPaperId(card.id);
-    setDeck('people');
-    setView('discover');
-    setModal(null);
-    setNotice('You explicitly shared buddy interest for this poster.');
+    api.buddy(card.id, card.occurrences?.[0]?.occurrence_id).then(() => refresh()).then(() => {
+      setPaperId(card.id); setDeck('people'); setView('discover'); setModal(null);
+      setNotice('You explicitly shared buddy interest for this poster.');
+    }).catch((failure) => setError(failure.message));
   }
 
   function joinGroup(card) {
     if (!card.place) { setNotice('The host needs to confirm a public meeting point before you can join.'); return; }
-    if (commit({ ...swipe(state, actor, card, 'right'), joins: { ...state.joins, [actionKey(actor, 'groups', card.id)]: true } })) {
-      setNotice('You joined the meetup. Meeting details are in Saved.');
-    }
+    api.join(card.id).then(() => refresh()).then(() => setNotice('You joined the meetup. Meeting details are in Saved.')).catch((failure) => setError(failure.message));
   }
 
   function switchActor(id) {
-    setActor(id);
+    api.session(id).then(() => { setActor(id); return refresh(id); }).catch((failure) => setError(failure.message));
     setPaperId(null);
     setLastAction(null);
     setModal(null);
-    setNotice(`Now exploring as ${identities.find((person) => person.id === id).name.split(' ')[0]}.`);
+    setNotice(`Now exploring as ${id[0].toUpperCase() + id.slice(1)}.`);
   }
 
 
   function answer(card, decision) {
-    if (!commit(respond(state, actor, card.id, decision))) return;
-    if (decision === 'accepted') { setModal({ kind: 'chat', card }); setNotice(`You accepted ${card.title.split(' ')[0]}'s request. Say hello!`); }
-    else setNotice('Request declined. They will only see that it was not accepted.');
+    api.respond(card.id, decision).then(() => refresh()).then(() => {
+      if (decision === 'accepted') setModal({ kind: 'chat', card });
+      setNotice(decision === 'accepted' ? `You accepted ${card.title.split(' ')[0]}'s request. Say hello!` : 'Request declined.');
+    }).catch((failure) => setError(failure.message));
   }
 
   function send(card, text) {
-    try { return commit(sendMessage(state, actor, card.id, text)); }
-    catch (failure) { setNotice(failure.message); return false; }
+    if (!text.trim()) return false;
+    api.sendMessage(card.id, text).then(() => refresh()).then(() => setNotice('Message sent.')).catch((failure) => setNotice(failure.message));
+    return true;
   }
 
   function detailBody(card) {
-    const matched = card.type === 'people' && isMatched(state, actor, card.id);
-    const liked = isSaved(state, actor, card);
-    const status = card.type === 'people' ? requestStatus(state, actor, card.id) : 'none';
-    const incoming = card.type === 'people' && requestStatus(state, card.id, actor) === 'pending';
+    const matched = isRemoteMatched(card);
+    const liked = isRemoteSaved(card);
+    const incoming = card.type === 'people' && requests.some((request) => request.id === card.id);
     const first = card.title.split(' ')[0];
     return <>
       <p className="eyebrow">{card.type === 'research' ? 'Fictional research fixture' : card.type === 'people' ? 'Fictional opted-in attendee' : 'Fictional hosted meetup'}</p>
       <h3 className="detail-subtitle">{card.subtitle}</h3>
       <p className="muted">{card.summary || card.subtitle}</p>
       {card.type === 'research' && <><p className="byline">{card.authors}</p><div className="info-box"><Icon name="clock" /><span>{card.occurrences.length ? `${card.occurrences[0].date} · ${card.occurrences[0].start}–${card.occurrences[0].end} ET (Philadelphia)` : 'Time or room unconfirmed'}</span></div>{card.occurrences.length > 0 && <div className="info-box"><Icon name="pin" /><span>{card.occurrences[0].room} · illustrative session only</span></div>}<p className="fine">No author attendance is implied. Paper, authors, and schedule in this local prototype are unverified fixtures.</p></>}
-      {card.type === 'people' && <><div className="offer-grid"><div><span className="eyebrow">CAN HELP WITH</span><p>{card.offers}</p></div><div><span className="eyebrow">WANTS TO LEARN</span><p>{card.asks}</p></div></div><p className="fine">{card.evidence.join(' · ')}</p>{matched ? <button className="button primary full" onClick={() => setModal({ kind: 'chat', card })}><Icon name="bulb" /> Open chat with {first}</button> : incoming ? <><p className="info-box"><Icon name="bell" />{first} sent you a chat request.</p><div className="request-actions"><button className="button pass-button" onClick={() => answer(card, 'rejected')}><Icon name="close" />Decline</button><button className="button primary" onClick={() => answer(card, 'accepted')}><Icon name="check" />Accept</button></div></> : liked && <><p className="info-box"><Icon name={status === 'not_accepted' ? 'close' : 'clock'} />{status === 'not_accepted' ? `${first} didn't accept this request.` : `Request sent. Waiting for ${first} to accept.`}</p><label className="field">Your first message (prefills the chat)<textarea rows="4" value={introFor(state, actor, card)} onChange={(event) => commit({ ...state, drafts: { ...state.drafts, [actionKey(actor, 'people', card.id)]: event.target.value } })} /></label></>}<p className="fine">{first} sees your name and profile with the request. Messages stay in this browser in the local demo.</p></>}
+      {card.type === 'people' && <><div className="offer-grid"><div><span className="eyebrow">CAN HELP WITH</span><p>{card.offers}</p></div><div><span className="eyebrow">WANTS TO LEARN</span><p>{card.asks}</p></div></div><p className="fine">{card.evidence.join(' · ')}</p>{matched ? <button className="button primary full" onClick={() => setModal({ kind: 'chat', card })}><Icon name="bulb" /> Open chat with {first}</button> : incoming ? <><p className="info-box"><Icon name="bell" />{first} sent you a chat request.</p><div className="request-actions"><button className="button pass-button" onClick={() => answer(card, 'rejected')}><Icon name="close" />Decline</button><button className="button primary" onClick={() => answer(card, 'accepted')}><Icon name="check" />Accept</button></div></> : liked && <><p className="info-box"><Icon name="clock" />Request sent. Waiting for {first} to accept.</p><label className="field">Your first message (prefills the chat)<textarea rows="4" defaultValue="" onChange={(event) => api.opener(card.id, event.target.value).catch((failure) => setError(failure.message))} /></label></>}<p className="fine">{first} sees your name and profile with the request. Messages stay in this browser on the server.</p></>}
       {card.type === 'groups' && <><div className="info-box"><Icon name="clock" />March 1, 2025 · {card.time} ET (Philadelphia)</div><div className="info-box"><Icon name="pin" />{card.place || 'Meeting point unconfirmed'}</div><p className="muted">Hosted by {card.host} · {card.audience}<br />{card.style}</p><button className="button primary full" disabled={!card.place || state.joins[actionKey(actor, 'groups', card.id)]} onClick={() => joinGroup(card)}>{state.joins[actionKey(actor, 'groups', card.id)] ? 'Joined meetup' : card.place ? 'Join meetup' : 'Waiting for a meeting point'}<Icon name="check" /></button></>}
       {card.type === 'research' && liked && card.format === 'Poster' && <button className="button primary full" onClick={() => shareBuddy(card)}>Open to a buddy for this poster <Icon name="people" /></button>}
-      {!liked && card.type !== 'groups' && <button className="button primary full" onClick={() => { act('right', card); if (card.type !== 'people' || !isMatched(swipe(state, actor, card, 'right'), actor, card.id)) setModal(null); }}>{card.type === 'people' ? 'Send chat request' : 'Save research'}<Icon name={card.type === 'people' ? 'connect' : 'saved'} /></button>}
+      {!liked && card.type !== 'groups' && <button className="button primary full" onClick={() => { act('right', card); setModal(null); }}>{card.type === 'people' ? 'Send chat request' : 'Save research'}<Icon name={card.type === 'people' ? 'connect' : 'saved'} /></button>}
     </>;
   }
 
@@ -273,7 +279,7 @@ function App() {
     </aside>
 
     <div className="workspace">
-      <header className="topbar"><span><span className="tiny-flower">✳</span> A little curiosity goes a long way.</span><div className="topbar-actions"><button className="icon-button notify-button" aria-label={`Chat requests${requests.length ? `, ${requests.length} new` : ''}`} onClick={() => setModal({ kind: 'requests' })}><Icon name="bell" size={17} />{requests.length > 0 && <span className="notify-badge">{requests.length}</span>}</button><button className="icon-button" aria-label="Edit interests and preferences" onClick={() => setModal({ kind: 'profile' })}><Icon name="settings" size={17} /></button><label className="identity-picker"><span>Demo as</span><select aria-label="Demo identity" value={actor} onChange={(event) => switchActor(event.target.value)}>{identities.map((person) => <option value={person.id} key={person.id}>{person.name.split(' ')[0]}</option>)}</select></label></div></header>
+      <header className="topbar"><span><span className="tiny-flower">✳</span> A little curiosity goes a long way.</span><div className="topbar-actions"><button className="icon-button notify-button" aria-label={`Chat requests${requests.length ? `, ${requests.length} new` : ''}`} onClick={() => setModal({ kind: 'requests' })}><Icon name="bell" size={17} />{requests.length > 0 && <span className="notify-badge">{requests.length}</span>}</button><button className="icon-button" aria-label="Edit interests and preferences" onClick={() => setModal({ kind: 'profile' })}><Icon name="settings" size={17} /></button><label className="identity-picker"><span>Demo as</span><select aria-label="Demo identity" value={actor} onChange={(event) => switchActor(event.target.value)}>{['riley', 'jules'].map((id) => <option value={id} key={id}>{id[0].toUpperCase() + id.slice(1)}</option>)}</select></label></div></header>
       <div className="demo-banner"><span className="demo-pill">LOCAL DEMO</span><span>Fictional data. Historical replay. Chats stay in this browser.</span></div>
       {error && <div className="error-banner" role="alert">{error}<button onClick={() => setModal({ kind: 'reset' })}>Reset local data</button></div>}
 
@@ -294,7 +300,7 @@ function App() {
               event.currentTarget.querySelectorAll('[role="tab"]')[next].focus();
             }}>{[['research', 'Research'], ['people', 'People'], ['groups', 'Groups']].map(([id, label]) => <button key={id} role="tab" id={`tab-${id}`} tabIndex={deck === id ? 0 : -1} aria-selected={deck === id} aria-controls="discovery-panel" className={deck === id ? 'selected' : ''} onClick={() => { setDeck(id); setPinned(null); setDrag(0); }}><Icon name={id} size={18} />{label}</button>)}</div>
             <div className="deck-toolbar"><span>{deck === 'research' ? 'A new idea to follow' : deck === 'people' ? 'A new person to meet' : 'A small group to belong to'}</span>{deck === 'research' ? <div className="format-filters" aria-label="Research format">{['All', 'Oral', 'Poster'].map((value) => <button key={value} aria-pressed={format === value} onClick={() => setFormat(value)}>{value === 'All' ? 'All' : `${value}s`}</button>)}</div> : <span className="fine">{upcoming.length} to discover</span>}</div>
-            {deck === 'people' && paperId && <div className="buddy-context"><Icon name="people" size={17} /><span>Buddy discovery: {findCard('research', paperId).subtitle}</span><button aria-label="Clear poster context" className="icon-button" onClick={() => setPaperId(null)}><Icon name="close" size={15} /></button></div>}
+            {deck === 'people' && paperId && <div className="buddy-context"><Icon name="people" size={17} /><span>Buddy discovery: {cardsForState.find((card) => card.id === paperId)?.subtitle}</span><button aria-label="Clear poster context" className="icon-button" onClick={() => setPaperId(null)}><Icon name="close" size={15} /></button></div>}
             <section id="discovery-panel" role="tabpanel" aria-labelledby={`tab-${deck}`}>
               {current ? <div className="card-stack">
                 <article className={`discovery-card ${drag ? 'dragging' : ''}`} style={{ transform: `translateX(${drag}px) rotate(${drag / 25}deg)` }}
@@ -345,10 +351,10 @@ function App() {
       </div>
     </div>
     <div className="toast-region" role="status" aria-live="polite">{notice && <div className="toast"><Icon name="check" size={18} />{notice}</div>}</div>
-    {modal?.kind === 'profile' && <Modal title="Make this conference yours." onClose={() => setModal(null)} wide><ProfileForm key={actor} profile={profile} onSave={(values) => { if (commit({ ...state, profiles: { ...state.profiles, [actor]: values } })) { setModal(null); setNotice('Discovery updated. Your interests and preferences are saved.'); } }} /></Modal>}
+    {modal?.kind === 'profile' && <Modal title="Make this conference yours." onClose={() => setModal(null)} wide><ProfileForm key={actor} profile={profile} onSave={(values) => { api.updateMe({ intent: values.intent, offers: values.offers.split(',').map((v) => v.trim()).filter(Boolean), asks: values.asks.split(',').map((v) => v.trim()).filter(Boolean), conversation_preference: values.preference.toLowerCase().replaceAll(' ', '_') }).then(() => refresh()).then(() => { setModal(null); setNotice('Discovery updated. Your interests and preferences are saved.'); }).catch((failure) => setError(failure.message)); }} /></Modal>}
     {(modal?.kind === 'detail' || modal?.kind === 'match') && <Modal title={modal.kind === 'match' && modalMatched ? 'A little mutual curiosity.' : modal.card.title} onClose={() => setModal(null)}>{modal.kind === 'match' && modalMatched && <div className="match-celebration"><Avatar person={identity} /><span><Icon name="bulb" size={26} /></span><Avatar person={modal.card} /><p>You and {modal.card.title.split(' ')[0]} both chose to connect.</p></div>}{detailBody(modal.card)}</Modal>}
     {modal?.kind === 'requests' && <Modal title="Chat requests" onClose={() => setModal(null)}>{requests.length === 0 ? <p className="muted">No new requests. When someone taps Interested on you, it shows up here.</p> : requests.map((card) => <div className="request-row" key={card.id}><Avatar person={card} small /><div><strong>{card.title}</strong><small>{card.stage} · offers {card.offers.toLowerCase()}</small>{conversation(state, actor, card.id)[0]?.from === card.id && <p className="request-note">“{conversation(state, actor, card.id)[0].body}”</p>}</div><div className="request-actions"><button className="button pass-button" onClick={() => answer(card, 'rejected')}>Decline</button><button className="button primary" onClick={() => answer(card, 'accepted')}>Accept</button></div></div>)}<p className="fine">Declining is private: the sender only sees that the request wasn't accepted.</p></Modal>}
-    {modal?.kind === 'chat' && <Modal title={<><Icon name="bulb" size={24} className="title-icon" /> Chat with {modal.card.title.split(' ')[0]}</>} onClose={() => setModal(null)}>{isMatched(state, actor, modal.card.id) ? <ChatWindow key={`${actor}-${modal.card.id}`} me={actor} other={modal.card} thread={conversation(state, actor, modal.card.id)} draft={introFor(state, actor, modal.card)} onSend={(text) => send(modal.card, text)} /> : <p className="muted">This chat isn't open. It opens once a request is accepted.</p>}</Modal>}
+    {modal?.kind === 'chat' && <Modal title={<><Icon name="bulb" size={24} className="title-icon" /> Chat with {modal.card.title.split(' ')[0]}</>} onClose={() => setModal(null)}>{matches.some((card) => card.id === modal.card.id) ? <ChatWindow key={`${actor}-${modal.card.id}`} me={actor} other={modal.card} thread={state.messages?.[`${actor}:${modal.card.id}`] || []} draft="" onSend={(text) => send(modal.card, text)} /> : <p className="muted">This chat isn't open. It opens once a request is accepted.</p>}</Modal>}
     {modal?.kind === 'reset' && <Modal title="A fresh start?" onClose={() => setModal(null)}><p className="muted">This clears every demo identity's saved items, passes, requests, chats, and introductions in this browser. Nothing on a server is changed.</p><button className="button primary full" onClick={() => {
       try { localStorage.removeItem(STORAGE_KEY); setState(freshState()); setError(''); setLastAction(null); setPaperId(null); setModal(null); setView('discover'); setNotice('Local demo reset. A fresh set of possibilities.'); }
       catch (failure) { setError(`Cannot reset browser storage: ${failure.message}`); }

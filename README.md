@@ -93,7 +93,7 @@ Dash0 telemetry uses OpenTelemetry for HTTP traces and metrics. Set `OTEL_EXPORT
 
 ## Backend API
 
-Demo sessions: with `DEMO_SESSION_TOKENS=riley=<token>,jules=<token>` set (Secret key `demo-session-tokens`), send `Authorization: Bearer <token>`, or `POST /api/demo/session {"token":"<token>"}` to get a session cookie. Without tokens the demo runs in open mode and `POST /api/demo/session {"identity":"riley"|"jules"}` picks one of the two fictional identities. The actor always comes from the session, never from the request body. Full contract and privacy rules: [docs/DATA.md](docs/DATA.md).
+Demo sessions: with `DEMO_SESSION_TOKENS=riley=<token>,jules=<token>` set (Secret key `demo-session-tokens`), send `Authorization: Bearer <token>`, or `POST /api/demo/session {"token":"<token>"}` to get a session cookie. For the hackathon, set `DEMO_PUBLIC_SESSIONS=true` to explicitly allow fictional identity sessions without exposing tokens; it is disabled by default. Without that flag, tokens are required and `POST /api/demo/session {"identity":"riley"|"jules"}` picks one of the two fictional identities. The actor always comes from the session, never from the request body. Full contract and privacy rules: [docs/DATA.md](docs/DATA.md).
 
 - `PUT /api/me` saves onboarding choices (intent, offers, asks, tags, stage, conversation preference).
 - `GET /api/feed?deck=research|people|groups[&paperId][&format=oral|poster]` returns up to 30 ranked cards from Elasticsearch RRF and hides cards the viewer already swiped. Add `paperId` to find poster buddies.

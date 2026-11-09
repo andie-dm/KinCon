@@ -59,6 +59,10 @@ spec:
                   name: app-credentials
                   key: demo-session-tokens
                   optional: true
+            # Keep fictional public sessions opt-in; set to "true" only in the
+            # hackathon demo overlay, never for a real deployment.
+            - name: DEMO_PUBLIC_SESSIONS
+              value: "false"
           resources:
             requests:
               cpu: 100m
