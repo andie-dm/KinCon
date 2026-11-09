@@ -72,13 +72,15 @@ function createStore({ node = process.env.ELASTICSEARCH_URL, apiKey = process.en
 
   async function ensureIndex(index) {
     const elastic = requireClient();
-    if (await elastic.indices.exists({ index })) return;
+    if (await elastic.indices.exists({ index })) return false;
 
     try {
       await elastic.indices.create({ index, mappings: mappings[index] });
+      return true;
     } catch (error) {
       const errorType = error.meta?.body?.error?.type;
-      if (errorType !== 'resource_already_exists_exception') throw error;
+      if (errorType === 'resource_already_exists_exception') return false;
+      throw error;
     }
   }
 
@@ -103,11 +105,14 @@ function createStore({ node = process.env.ELASTICSEARCH_URL, apiKey = process.en
 
   async function initialize() {
     requireClient();
-    await Promise.all(Object.values(INDEXES).map(ensureIndex));
+    const created = await Promise.all(
+      Object.values(INDEXES).map(async (index) => [index, await ensureIndex(index)]),
+    );
+    const createdIndexes = new Map(created);
     await Promise.all([
-      seed(INDEXES.sessions, sessions),
-      seed(INDEXES.people, people),
-      seed(INDEXES.groups, groups),
+      createdIndexes.get(INDEXES.sessions) ? seed(INDEXES.sessions, sessions) : null,
+      createdIndexes.get(INDEXES.people) ? seed(INDEXES.people, people) : null,
+      createdIndexes.get(INDEXES.groups) ? seed(INDEXES.groups, groups) : null,
     ]);
   }
 
