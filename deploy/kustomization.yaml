@@ -10,5 +10,5 @@ resources:
   - httproute.yaml
 images:
   - name: app
-    newName: ghcr.io/andie-dm/fowpy
-    newTag: 6967c79
+    newName: ghcr.io/andie-dm/kincon
+    newTag: 0574b68
