@@ -2,9 +2,19 @@
   "name": "cnh-starter",
   "version": "1.0.0",
   "private": true,
-  "description": "Starter app for the Radar AI SRE track at the Cloud Native Hackathon",
+  "description": "Fowpy conference discovery UI and local demo",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js"
+    "start": "node server.js",
+    "dev": "vite --host 127.0.0.1",
+    "build": "vite build",
+    "test": "node --test src/demo.test.mjs server.test.cjs"
+  },
+  "dependencies": {
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0"
+  },
+  "devDependencies": {
+    "vite": "^7.2.2"
   }
 }
