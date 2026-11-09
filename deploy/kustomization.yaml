@@ -11,4 +11,4 @@ resources:
 images:
   - name: app
     newName: ghcr.io/andie-dm/kincon
-    newTag: 0574b68
+    newTag: 580e9da
