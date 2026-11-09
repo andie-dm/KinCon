@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { findCard } from './fixtures.mjs';
-import { actionKey, affinity, feed, freshState, introFor, isMatched, parseState, swipe } from './demo.mjs';
+import { actionKey, affinity, conversation, feed, freshState, incomingRequests, introFor, isMatched, parseState, requestStatus, respond, sendMessage, swipe } from './demo.mjs';
 
 test('passes and saves survive serialization and repeated swipes have one effect', () => {
   const paper = findCard('research', 'flow-skills');
@@ -71,3 +71,43 @@ test('malformed storage produces an explicit error and empty storage starts fres
   }
 });
 
+test('Interested sends a visible request the recipient can accept to open a chat', () => {
+  let state = swipe(freshState(), 'alex', findCard('people', 'jules'), 'right');
+  assert.equal(requestStatus(state, 'alex', 'jules'), 'pending');
+  assert.deepEqual(incomingRequests(state, 'jules'), ['alex']);
+  assert.deepEqual(incomingRequests(state, 'alex'), []);
+  assert.throws(() => sendMessage(state, 'alex', 'jules', 'hi'), /accepted/);
+  state = respond(state, 'jules', 'alex', 'accepted');
+  assert.equal(requestStatus(state, 'alex', 'jules'), 'accepted');
+  assert.equal(isMatched(state, 'jules', 'alex'), true);
+  assert.deepEqual(incomingRequests(state, 'jules'), []);
+  state = sendMessage(state, 'alex', 'jules', '  See you at the poster?  ', '2025-03-01T12:05:00-05:00');
+  state = sendMessage(state, 'jules', 'alex', 'Yes! Board 746.', '2025-03-01T12:06:00-05:00');
+  state = parseState(JSON.stringify(state));
+  assert.deepEqual(conversation(state, 'jules', 'alex').map((m) => [m.from, m.body]),
+    [['alex', 'See you at the poster?'], ['jules', 'Yes! Board 746.']]);
+});
+
+test('a declined request stays closed and only reads as not accepted', () => {
+  let state = swipe(freshState(), 'alex', findCard('people', 'jules'), 'right');
+  state = respond(state, 'jules', 'alex', 'rejected');
+  assert.equal(requestStatus(state, 'alex', 'jules'), 'not_accepted');
+  assert.equal(isMatched(state, 'alex', 'jules'), false);
+  assert.deepEqual(incomingRequests(state, 'jules'), []);
+  // A later response cannot reopen it, and no chat is possible.
+  assert.equal(respond(state, 'jules', 'alex', 'accepted'), state);
+  assert.throws(() => sendMessage(state, 'jules', 'alex', 'hi'), /accepted/);
+});
+
+test('messages are validated and old saved demos load without chat data', () => {
+  let state = swipe(swipe(freshState(), 'alex', findCard('people', 'jules'), 'right'), 'jules', findCard('people', 'alex'), 'right');
+  assert.equal(isMatched(state, 'alex', 'jules'), true);
+  assert.throws(() => sendMessage(state, 'alex', 'jules', '   '), /Write a message/);
+  assert.throws(() => sendMessage(state, 'alex', 'jules', 'x'.repeat(1001)), /limited/);
+  const legacy = { ...freshState() };
+  delete legacy.responses;
+  delete legacy.messages;
+  assert.deepEqual(parseState(JSON.stringify(legacy)).messages, {});
+  assert.throws(() => parseState(JSON.stringify({ ...freshState(), responses: { x: 'maybe' } })));
+  assert.throws(() => parseState(JSON.stringify({ ...freshState(), messages: { x: [{ from: 1 }] } })));
+});

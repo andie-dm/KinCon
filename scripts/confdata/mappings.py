@@ -13,6 +13,7 @@ PEOPLE = "conference-people-v1"
 GROUPS = "conference-groups-v1"
 ACTIONS = "conference-actions-v1"
 EVENTS = "conference-events-v1"
+MESSAGES = "conference-messages-v1"
 
 DEFAULT_INFERENCE_ID = ".multilingual-e5-small-elasticsearch"
 
@@ -126,6 +127,7 @@ def actions() -> dict:
         "target_tags": KW,             # server-derived snapshot at the effective write
         "opener": NOINDEX_TEXT,        # private draft: stored, not searchable
         "opener_edited_at": DATE,
+        "response": KW,                # respond actions: accepted | rejected
     }}
 
 
@@ -143,5 +145,15 @@ def events() -> dict:
     }}
 
 
-ALL = {PAPERS: papers, PEOPLE: people, GROUPS: groups, ACTIONS: actions, EVENTS: events}
+def messages() -> dict:
+    # Private chat between two connected attendees. The body is stored, never
+    # searchable, and never part of any semantic field.
+    return {"dynamic": "strict", "properties": {
+        "message_id": KW, "event_id": KW, "conversation_id": KW,
+        "sender_profile_id": KW, "recipient_profile_id": KW,
+        "body": NOINDEX_TEXT, "client_message_id": KW, "created_at": DATE,
+    }}
+
+
+ALL = {PAPERS: papers, PEOPLE: people, GROUPS: groups, ACTIONS: actions, EVENTS: events, MESSAGES: messages}
 SETTINGS = {"number_of_shards": 1, "number_of_replicas": 0}

@@ -7,13 +7,22 @@ export const freshState = () => ({
   buddies: {},
   joins: {},
   drafts: {},
+  responses: {},
+  messages: {},
 });
+
+export const MAX_MESSAGE_LENGTH = 1000;
 
 export function parseState(raw) {
   if (raw === null) return freshState();
   const state = JSON.parse(raw);
   const isRecord = (value) => value !== null && typeof value === 'object' && !Array.isArray(value);
-  if (!isRecord(state) || !['profiles', 'swipes', 'buddies', 'joins', 'drafts'].every((key) => isRecord(state[key]))) {
+  // Demo data saved before chat existed has no responses/messages yet.
+  if (isRecord(state)) {
+    state.responses ??= {};
+    state.messages ??= {};
+  }
+  if (!isRecord(state) || !['profiles', 'swipes', 'buddies', 'joins', 'drafts', 'responses', 'messages'].every((key) => isRecord(state[key]))) {
     throw new Error('Stored demo data is invalid. Reset the demo to continue.');
   }
   for (const { id } of identities) {
@@ -25,7 +34,10 @@ export function parseState(raw) {
   if (Object.values(state.swipes).some((value) => !['left', 'right'].includes(value))
       || Object.values(state.buddies).some((value) => typeof value !== 'boolean')
       || Object.values(state.joins).some((value) => typeof value !== 'boolean')
-      || Object.values(state.drafts).some((value) => typeof value !== 'string')) {
+      || Object.values(state.drafts).some((value) => typeof value !== 'string')
+      || Object.values(state.responses).some((value) => !['accepted', 'rejected'].includes(value))
+      || Object.values(state.messages).some((thread) => !Array.isArray(thread) || thread.some((message) =>
+        !isRecord(message) || typeof message.from !== 'string' || typeof message.body !== 'string' || typeof message.at !== 'string'))) {
     throw new Error('Stored demo actions are invalid. Reset the demo to continue.');
   }
   return state;
@@ -33,9 +45,49 @@ export function parseState(raw) {
 
 export const actionKey = (actor, type, id) => `${actor}:${type}:${id}`;
 export const isSaved = (state, actor, card) => state.swipes[actionKey(actor, card.type, card.id)] === 'right';
+
+// "Interested" on a person is a visible chat request. The recipient is notified
+// and accepts or declines; two people who are both interested are connected
+// without a separate acceptance.
+const interested = (state, from, to) => state.swipes[actionKey(from, 'people', to)] === 'right';
+
+export function requestStatus(state, sender, recipient) {
+  if (!interested(state, sender, recipient)) return 'none';
+  if (interested(state, recipient, sender)) return 'accepted';
+  const response = state.responses[actionKey(recipient, 'people', sender)];
+  // The sender only learns "not accepted", never a reason.
+  return response === 'accepted' ? 'accepted' : response === 'rejected' ? 'not_accepted' : 'pending';
+}
+
 export const isMatched = (state, actor, id) =>
-  state.swipes[actionKey(actor, 'people', id)] === 'right'
-  && state.swipes[actionKey(id, 'people', actor)] === 'right';
+  requestStatus(state, actor, id) === 'accepted' || requestStatus(state, id, actor) === 'accepted';
+
+// Pending requests other people sent to this actor, oldest first.
+export function incomingRequests(state, actor) {
+  return Object.keys(state.swipes)
+    .map((key) => key.split(':'))
+    .filter(([from, type, to]) => type === 'people' && to === actor && from !== actor)
+    .map(([from]) => from)
+    .filter((from) => requestStatus(state, from, actor) === 'pending');
+}
+
+export function respond(state, actor, sender, decision) {
+  if (!['accepted', 'rejected'].includes(decision)) throw new Error('Invalid response.');
+  if (requestStatus(state, sender, actor) !== 'pending') return state;
+  return { ...state, responses: { ...state.responses, [actionKey(actor, 'people', sender)]: decision } };
+}
+
+export const conversationKey = (a, b) => [a, b].sort().join('|');
+export const conversation = (state, a, b) => state.messages[conversationKey(a, b)] || [];
+
+export function sendMessage(state, actor, other, body, at = new Date().toISOString()) {
+  if (!isMatched(state, actor, other)) throw new Error('You can chat once your request is accepted.');
+  const text = String(body ?? '').trim();
+  if (!text) throw new Error('Write a message first.');
+  if (text.length > MAX_MESSAGE_LENGTH) throw new Error(`Messages are limited to ${MAX_MESSAGE_LENGTH} characters.`);
+  const key = conversationKey(actor, other);
+  return { ...state, messages: { ...state.messages, [key]: [...conversation(state, actor, other), { from: actor, body: text, at }] } };
+}
 
 export function swipe(state, actor, card, direction) {
   if (!['left', 'right'].includes(direction)) throw new Error('Invalid swipe direction.');
