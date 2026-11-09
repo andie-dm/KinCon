@@ -50,6 +50,12 @@ Run focused checks with `npm --prefix app test`.
 
 This repository is connected to [Gitar](https://app.gitar.ai) for AI-assisted pull request reviews. Open a pull request and wait for `gitar-bot` to post its summary and inline feedback. You can reply to a bot comment with a request such as `Please fix this issue and run CI validation`; Gitar will propose a follow-up commit after validating the change.
 
+## Elasticsearch and Dash0
+
+The app indexes its conference sessions in Elasticsearch and exposes keyword search at `/api/sessions/search?q=<query>`. Set `ELASTICSEARCH_URL`, `ELASTICSEARCH_API_KEY`, and optionally `ELASTICSEARCH_INDEX` when running locally. The app creates the index and refreshes the starter sessions on startup.
+
+Dash0 telemetry uses OpenTelemetry for HTTP traces and metrics. Set `OTEL_EXPORTER_OTLP_ENDPOINT`, `OTEL_EXPORTER_OTLP_HEADERS`, and `OTEL_SERVICE_NAME` using the values from your Dash0 workspace. The app starts without telemetry when these values are absent, but search returns an explicit configuration error until Elasticsearch is configured.
+
 ## The day
 
 - 11:00: before you write any code, get your cluster, open it in Radar Cloud, and connect your agent to Radar (steps below).
@@ -113,6 +119,15 @@ Your repo and your image are public, so an API key for a hosted AI model, or any
    kubectl -n team-<team-name> create secret generic app-credentials --from-literal=api-key="$API_KEY"
    ```
    Create it yourself rather than giving the key to your agent: whatever you paste into a chat stays in its history.
+
+   For the built-in Elasticsearch and Dash0 integrations, use these `stringData` keys in the same Secret:
+
+   - `elasticsearch-url`
+   - `elasticsearch-api-key`
+   - `dash0-otlp-endpoint`
+   - `dash0-otlp-headers`
+
+   Copy the Dash0 endpoint and headers exactly as provided by your Dash0 workspace.
 2. **Read it in your app.** Add this to the `env:` list of the container in `deploy/deployment.yaml`, then push. Only the Secret's name goes in git, never the key:
    ```yaml
    - name: API_KEY
