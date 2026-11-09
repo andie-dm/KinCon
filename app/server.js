@@ -1,11 +1,20 @@
 // Conference networking API. Keep /healthz and /readyz stable for Kubernetes.
 const http = require('node:http');
+const fs = require('node:fs');
+const path = require('node:path');
 const { createStore } = require('./store');
 const { sessions } = require('./seed-data');
 
 const port = Number(process.env.PORT || 8080);
 const team = process.env.TEAM_NAME || 'kincon';
 const version = process.env.APP_VERSION || 'dev';
+const staticRoot = path.join(__dirname, 'dist');
+const contentTypes = {
+  '.html': 'text/html; charset=utf-8',
+  '.js': 'text/javascript; charset=utf-8',
+  '.css': 'text/css; charset=utf-8',
+  '.svg': 'image/svg+xml',
+};
 const store = createStore();
 const allowInsecureIdentity = process.env.ALLOW_INSECURE_DEMO_IDENTITY === 'true';
 const demoTokens = new Map(
@@ -26,6 +35,40 @@ let storeFailure = null;
 function json(res, status, body) {
   res.writeHead(status, { 'content-type': 'application/json' });
   res.end(JSON.stringify(body));
+}
+
+function serveStatic(req, res, pathname) {
+  let decodedPath;
+  try {
+    decodedPath = decodeURIComponent(pathname);
+  } catch {
+    res.writeHead(400, { 'content-type': 'text/plain' });
+    return res.end('bad path\n');
+  }
+  if (decodedPath.includes('\0')) {
+    res.writeHead(400, { 'content-type': 'text/plain' });
+    return res.end('bad path\n');
+  }
+  const file = path.resolve(staticRoot, decodedPath === '/' ? 'index.html' : `.${decodedPath}`);
+  if (!file.startsWith(`${staticRoot}${path.sep}`)) {
+    res.writeHead(404, { 'content-type': 'text/plain' });
+    return res.end('not found\n');
+  }
+  return fs.readFile(file, (error, content) => {
+    if (error) {
+      const missingBuild = decodedPath === '/' && error.code === 'ENOENT';
+      const status = missingBuild ? 503 : error.code === 'ENOENT' || error.code === 'EISDIR' ? 404 : 500;
+      if (status !== 404) console.error(`Static UI request failed: ${error.message}`);
+      res.writeHead(status, { 'content-type': 'text/plain' });
+      return res.end(missingBuild ? 'UI build missing. Run npm run build first.\n' : 'unable to serve asset\n');
+    }
+    res.writeHead(200, {
+      'content-type': contentTypes[path.extname(file)] || 'application/octet-stream',
+      'cache-control': decodedPath === '/' ? 'no-cache' : 'public, max-age=31536000, immutable',
+      'x-content-type-options': 'nosniff',
+    });
+    res.end(req.method === 'HEAD' ? undefined : content);
+  });
 }
 
 function viewerId(req) {
@@ -352,21 +395,33 @@ async function saved(req) {
 
 async function handle(req, res) {
   const url = new URL(req.url, 'http://localhost');
+  if (req.method !== 'GET' && req.method !== 'HEAD'
+    && ['/healthz', '/readyz', '/api/sessions'].includes(url.pathname)) {
+    res.writeHead(405, { 'content-type': 'text/plain', allow: 'GET, HEAD' });
+    return res.end('method not allowed\n');
+  }
   if (url.pathname === '/healthz' || url.pathname === '/readyz') {
     const ready = url.pathname === '/healthz' || storeReady;
     res.writeHead(ready ? 200 : 503, { 'content-type': 'text/plain' });
     return res.end(ready ? 'ok\n' : `not ready: ${storeFailure || 'Elasticsearch initialization is pending'}\n`);
   }
-  if (url.pathname === '/') {
-    res.writeHead(200, { 'content-type': 'text/html; charset=utf-8' });
-    return res.end(`<!doctype html><title>${team}</title><h1>${team}</h1><p>version ${version}</p>`);
+  if ((url.pathname === '/' || url.pathname.startsWith('/assets/'))
+    && req.method !== 'GET' && req.method !== 'HEAD') {
+    res.writeHead(405, { 'content-type': 'text/plain', allow: 'GET, HEAD' });
+    return res.end('method not allowed\n');
+  }
+  if ((url.pathname === '/' || url.pathname.startsWith('/assets/'))
+    && (req.method === 'GET' || req.method === 'HEAD')) {
+    return serveStatic(req, res, url.pathname);
+  }
+  if (!url.pathname.startsWith('/api/')) return json(res, 404, { error: 'not found' });
+  if (req.method === 'GET' && url.pathname === '/api/sessions') {
+    if (!storeReady) return json(res, 200, { version, sessions });
+    const records = await store.search(store.indexes.sessions, { match_all: {} });
+    return json(res, 200, { version, sessions: records });
   }
   if (!storeReady) {
     return json(res, 503, { error: storeFailure || 'Elasticsearch initialization is pending' });
-  }
-  if (req.method === 'GET' && url.pathname === '/api/sessions') {
-    const records = await store.search(store.indexes.sessions, { match_all: {} });
-    return json(res, 200, { version, sessions: records });
   }
   if (req.method === 'GET' && url.pathname === '/api/sessions/search') {
     const query = url.searchParams.get('q')?.trim();
@@ -397,12 +452,14 @@ async function handle(req, res) {
   return json(res, 404, { error: 'not found' });
 }
 
-const server = http.createServer((req, res) => {
-  handle(req, res).catch((error) => {
-    console.error('request failed:', error.message);
-    json(res, error.statusCode || 500, { error: error.statusCode ? error.message : 'internal server error' });
+function createServer() {
+  return http.createServer((req, res) => {
+    handle(req, res).catch((error) => {
+      console.error('request failed:', error.message);
+      json(res, error.statusCode || 500, { error: error.statusCode ? error.message : 'internal server error' });
+    });
   });
-});
+}
 
 async function initializeWithRetry() {
   for (let attempt = 1; ; attempt += 1) {
@@ -420,14 +477,19 @@ async function initializeWithRetry() {
   }
 }
 
-server.listen(port, () => {
-  console.log(`listening on :${port}, version ${version}`);
-  initializeWithRetry();
-});
+if (require.main === module) {
+  const server = createServer();
+  server.listen(port, () => {
+    console.log(`listening on :${port}, version ${version}`);
+    initializeWithRetry();
+  });
 
-const shutdown = () => server.close(async () => {
-  await globalThis.otelShutdown?.();
-  process.exit(0);
-});
-process.once('SIGTERM', shutdown);
-process.once('SIGINT', shutdown);
+  const shutdown = () => server.close(async () => {
+    await globalThis.otelShutdown?.();
+    process.exit(0);
+  });
+  process.once('SIGTERM', shutdown);
+  process.once('SIGINT', shutdown);
+}
+
+module.exports = { createServer };

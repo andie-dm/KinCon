@@ -1,6 +1,7 @@
 # Kept out of the image build context.
 .git
 **/node_modules
+app/dist
 **/*kubeconfig*
 **/.env
 **/.env.*
