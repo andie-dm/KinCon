@@ -11,7 +11,13 @@ const allowInsecureIdentity = process.env.ALLOW_INSECURE_DEMO_IDENTITY === 'true
 const demoTokens = new Map(
   (process.env.DEMO_SESSION_TOKENS || '')
     .split(',')
-    .map((entry) => entry.trim().split('='))
+    .map((entry) => {
+      const trimmed = entry.trim();
+      const separator = trimmed.indexOf('=');
+      return separator > 0
+        ? [trimmed.slice(0, separator), trimmed.slice(separator + 1)]
+        : [];
+    })
     .filter(([id, token]) => id && token),
 );
 let storeReady = false;
@@ -85,16 +91,17 @@ function latestSwipes(actions) {
       latest.set(key, action);
     }
 
-    async function hasCurrentRight(actorId, targetId) {
-      const actions = latestSwipes(await actionsFor(actorId));
-      return actions.some(
-        (action) => action.action === 'right'
-          && action.target_type === 'person'
-          && action.target_id === targetId,
-      );
-    }
   }
   return [...latest.values()].sort((left, right) => new Date(right.created_at) - new Date(left.created_at));
+}
+
+async function hasCurrentRight(actorId, targetId) {
+  const actions = latestSwipes(await actionsFor(actorId));
+  return actions.some(
+    (action) => action.action === 'right'
+      && action.target_type === 'person'
+      && action.target_id === targetId,
+  );
 }
 
 function tagsOf(profile) {
@@ -398,7 +405,7 @@ const server = http.createServer((req, res) => {
 });
 
 async function initializeWithRetry() {
-  for (let attempt = 1; attempt <= 5; attempt += 1) {
+  for (let attempt = 1; ; attempt += 1) {
     try {
       await store.initialize();
       storeReady = true;
@@ -408,7 +415,7 @@ async function initializeWithRetry() {
     } catch (error) {
       storeFailure = error.message;
       console.error(`Elasticsearch initialization attempt ${attempt} failed:`, error.message);
-      if (attempt < 5) await new Promise((resolve) => setTimeout(resolve, attempt * 1000));
+      await new Promise((resolve) => setTimeout(resolve, Math.min(attempt * 1000, 30000)));
     }
   }
 }
