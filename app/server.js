@@ -377,10 +377,14 @@ async function saved(req) {
 
   const research = [];
   const groupsSaved = [];
+  const seen = new Set();
   for (const action of [
-    ...currentSwipes,
+    ...currentSwipes.filter((item) => item.action === 'right'),
     ...actions.filter((item) => item.action === 'join' || item.action === 'buddy'),
   ]) {
+    const key = `${action.target_type}:${action.target_id}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
     if (action.target_type === 'paper') {
       const paper = await store.get(store.indexes.sessions, action.target_id);
       if (paper) research.push(researchCard(paper));
@@ -394,7 +398,13 @@ async function saved(req) {
 }
 
 async function handle(req, res) {
-  const url = new URL(req.url, 'http://localhost');
+  let url;
+  try {
+    url = new URL(req.url, 'http://localhost');
+  } catch {
+    res.writeHead(400, { 'content-type': 'text/plain' });
+    return res.end('bad request\n');
+  }
   if (req.method !== 'GET' && req.method !== 'HEAD'
     && ['/healthz', '/readyz', '/api/sessions'].includes(url.pathname)) {
     res.writeHead(405, { 'content-type': 'text/plain', allow: 'GET, HEAD' });

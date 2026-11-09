@@ -1,5 +1,6 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
+const http = require('node:http');
 const { createServer } = require('./server');
 
 test('encoded null bytes return 400 without crashing the server', { timeout: 5000 }, async (t) => {
@@ -19,6 +20,22 @@ test('encoded null bytes return 400 without crashing the server', { timeout: 500
   const health = await fetch(`${base}/healthz`);
   assert.equal(health.status, 200);
   assert.equal(await health.text(), 'ok\n');
+
+  const malformed = await new Promise((resolve, reject) => {
+    const request = http.request({
+      host: '127.0.0.1',
+      port: server.address().port,
+      path: '//[',
+    }, (response) => {
+      let body = '';
+      response.setEncoding('utf8');
+      response.on('data', (chunk) => { body += chunk; });
+      response.on('end', () => resolve({ status: response.statusCode, body }));
+    });
+    request.on('error', reject);
+    request.end();
+  });
+  assert.deepEqual(malformed, { status: 400, body: 'bad request\n' });
 });
 
 test('production server keeps probes and starter API, and restricts static file access', async (t) => {
