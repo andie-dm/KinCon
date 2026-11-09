@@ -52,9 +52,22 @@ This repository is connected to [Gitar](https://app.gitar.ai) for AI-assisted pu
 
 ## Elasticsearch and Dash0
 
-The app indexes its conference sessions in Elasticsearch and exposes keyword search at `/api/sessions/search?q=<query>`. Set `ELASTICSEARCH_URL`, `ELASTICSEARCH_API_KEY`, and optionally `ELASTICSEARCH_INDEX` when running locally. The app creates the index and refreshes the starter sessions on startup.
+The app indexes conference papers and scheduled occurrences in Elasticsearch and exposes keyword search at `/api/sessions/search?q=<query>`. Set `ELASTICSEARCH_URL`, `ELASTICSEARCH_API_KEY`, and optionally `ELASTICSEARCH_INDEX` when running locally. The default index is `conference-papers-2025-v1`; the app creates it and seeds demo papers on startup.
 
 Dash0 telemetry uses OpenTelemetry for HTTP traces and metrics. Set `OTEL_EXPORTER_OTLP_ENDPOINT`, `OTEL_EXPORTER_OTLP_HEADERS`, and `OTEL_SERVICE_NAME` using the values from your Dash0 workspace. The app starts without telemetry when these values are absent, but search returns an explicit configuration error until Elasticsearch is configured.
+
+## Backend API
+
+The backend uses bearer tokens from `DEMO_SESSION_TOKENS` to identify demo sessions. Configure two tokens such as `demo-user-1=... ,demo-user-2=...` in the Kubernetes Secret and send `Authorization: Bearer <token>`. The insecure `x-demo-user` header is available only when `ALLOW_INSECURE_DEMO_IDENTITY=true` for local development. The API persists profiles, cards and actions in Elasticsearch:
+
+- `PUT /api/me` saves onboarding choices such as `stage`, `offers`, `asks`, `tags`, and `conversation_preferences`.
+- `GET /api/feed?deck=research|people|groups` returns ranked cards and hides cards already swiped by that viewer. Add `paperId` to find poster buddies.
+- `PUT /api/swipes/{type}/{id}` accepts `{"direction":"left"}` or `{"direction":"right"}` and is idempotent per viewer/card/direction.
+- `PUT /api/papers/{id}/buddy` explicitly shares poster interest.
+- `PUT /api/groups/{id}/join` joins a hosted meetup.
+- `GET /api/me/saved` returns saved papers, joined groups, and reciprocal people matches with editable intro drafts.
+
+The feed uses the latest 20 swipes to adjust topic affinity. Seed people and groups are fictional demo data; paper/session records must be replaced or extended with the verified AAAI-25 import described in [PLAN.md](PLAN.md).
 
 ## The day
 
@@ -126,6 +139,7 @@ Your repo and your image are public, so an API key for a hosted AI model, or any
    - `elasticsearch-api-key`
    - `dash0-otlp-endpoint`
    - `dash0-otlp-headers`
+   - `demo-session-tokens`
 
    Copy the Dash0 endpoint and headers exactly as provided by your Dash0 workspace.
 2. **Read it in your app.** Add this to the `env:` list of the container in `deploy/deployment.yaml`, then push. Only the Secret's name goes in git, never the key:
