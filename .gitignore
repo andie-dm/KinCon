@@ -7,6 +7,13 @@
 *.key
 
 node_modules/
+app/dist/
+
+# Local screenshots and browser-check artifacts, not application image assets.
+.playwright-mcp/
+screenshots/
+fowpy-*.png
+
 npm-debug.log*
 .DS_Store
 

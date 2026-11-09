@@ -16,6 +16,46 @@ Work in parallel. **First integration checkpoint, 45 minutes in:** open the depl
 
 ## Product decisions
 
+### Local UI implementation
+
+**Stack: React + Vite + plain CSS, served by the starter Node process.** React
+keeps the three decks, saved cards and dialogs composable; Vite provides fast
+local development and produces static assets. Custom CSS supplies the visual
+system without a component-library or animation dependency. No Next.js, separate
+frontend service, external images, API keys or database is needed for this slice.
+The production image builds the frontend once and keeps `$PORT`, `/healthz`,
+`/readyz` and the existing starter API.
+
+**Design:** warm paper background, ink typography, coral primary actions, mint
+match accents and original vector illustrations. Desktop has a discovery rail,
+one central card and a small conference-context panel. Mobile collapses to a
+single-column deck and bottom navigation. Visible Pass/Save actions accompany
+horizontal touch gestures and left/right arrow keys. Reduced-motion preferences,
+dialog focus handling and labeled controls are part of the baseline.
+
+**Local slice, in order:**
+1. Establish tokens, navigation, responsive card layouts and a labeled AAAI-25
+   replay clock.
+2. Supply all three decks with fictional fixtures: research examples, 12 opted-in
+   attendees (including one unavailable attendee) and three hosted meetups.
+   These are not verified proceedings, live attendance or Elasticsearch results.
+3. Add editable intent/offers/asks/conversation preferences, format filtering,
+   persistent passes/saves, explicit poster-buddy sharing and separate group joins.
+4. Support Alex/Jules demo identities, private one-sided likes, reciprocal matches
+   and editable/copyable introduction drafts. Browser storage is only a local demo
+   adapter, not an authentication, privacy or multi-user backend.
+5. Check the interaction model with focused tests and desktop/mobile browser
+   checks. Run with `npm --prefix app install` and `npm --prefix app run dev`.
+
+**Integration boundary:** fixtures and demo-state functions stay outside visual
+components. Replace that local adapter with the API contract below once the
+backend lands; the server must own sessions, reciprocity, authorization, ranking
+and idempotency. Live ranking, real bibliographic metadata, schedule verification
+and cross-device persistence are deliberately not claimed by this prototype.
+Build with `npm --prefix app run build`; `npm --prefix app start` serves the
+production bundle and probes from the same port. Local-only work does not change
+team configuration, commit, push or deploy.
+
 **Onboarding takes three choices.** Pick an intent (*connect around a problem*, *meet like-minded people*, *broaden my research*, or *find a poster buddy*). Enter a few topics under **I can help with** and **I want to learn**. Choose a conversation preference such as **peers at my stage**, **open to mentoring**, or **any stage**. Let attendees self-describe their stage and what kind of conversation they welcome. An undergraduate can seek a fellow newcomer, and an experienced engineer can seek another specialist. Make research interests and conversation preferences independently editable.
 
 | Deck | What the card shows | What a right swipe does |
