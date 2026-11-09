@@ -205,6 +205,7 @@ input[type="radio"] { accent-color: #748e61; }
 .offer-grid p { font-size: 12px; color: #78846b; margin-top: 8px; line-height: 1.8; }
 .match-celebration { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 15px; margin-top: 25px; }
 .match-celebration > span:not(.avatar) { color: var(--coral); }
+.modal h2 .title-icon { color: var(--coral); vertical-align: -3px; margin-right: 4px; }
 .match-celebration p { text-align: center; width: 100%; font-size: 12px; color: #7d8a70; margin: 10px 0 20px; }
 .toast-region { position: fixed; bottom: 25px; left: 50%; transform: translateX(-50%); width: max-content; max-width: calc(100vw - 32px); z-index: 6; pointer-events: none; }
 .toast { background: #2f493a; border: 1px solid #50624b; color: #fffdf4; box-shadow: 0 8px 30px #21362726; border-radius: 10px; display: flex; align-items: center; gap: 10px; padding: 14px 20px; font-size: 11px; line-height: 1.6; animation: appear .2s ease-out; }
