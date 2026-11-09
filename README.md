@@ -2,6 +2,50 @@
 
 Start here if your team has its own cluster at the hackathon: a virtual Kubernetes cluster (vcluster) where you're cluster-admin. You get a small app that `git push` deploys through Argo CD, and notes your coding agent reads so it ships through [Radar](https://radarhq.io)'s MCP server. Below is a menu of what Radar can do: pick what your project needs.
 
+## Fowpy UI: run locally
+
+The conference-discovery prototype uses **React + Vite + plain CSS**. See
+[`PLAN.md`](PLAN.md#local-ui-implementation) for the UI plan and backend boundary.
+Node 22.12+ (or 24+) is required.
+
+```bash
+npm --prefix app install
+npm --prefix app run dev
+```
+
+Open the localhost URL printed by Vite (normally **http://127.0.0.1:5173**).
+No credentials, database, cluster or external image service is needed. Research,
+authors, attendees, meetups and session details are **fictional fixtures**, not
+verified AAAI results. The screen is clearly labeled as a historical replay.
+
+Try Research, People and Groups; swipe horizontally, use the arrow keys outside
+form controls, or use Pass/Save. Edit your interests with the sliders button.
+Saved posters have an explicit buddy opt-in; saving a group does not join it.
+Join in its Details screen. To try mutual matching, like Jules as Alex, switch
+**Demo as** to Jules, and like Alex in People. Switch back to Alex and open
+Matches to edit or copy an intro. Nothing is sent. **Reset demo** clears local
+state for both identities.
+
+State persists in this browser's localStorage and synchronizes across same-origin
+tabs, not devices. Both identities share that storage: this is a UI simulation,
+not secure authentication or a production social backend. Real sessions, APIs,
+Elasticsearch, verified bibliography/schedules and server-side ranking remain
+integration work. The original `/api/sessions` endpoint remains a starter API;
+the prototype does not use it as its discovery feed.
+
+To run the production-shaped single Node service:
+
+```bash
+npm --prefix app run build
+npm --prefix app start
+```
+
+Open **http://localhost:8080**. It serves the UI, `/healthz`, `/readyz` and the
+starter API on `$PORT` (default 8080). The Dockerfile builds the same static UI
+and copies only the bundle and server into the runtime image. `APP_VERSION`
+supplied at build time appears in the UI for later deployment verification.
+Run focused checks with `npm --prefix app test`.
+
 ## Gitar code review
 
 This repository is connected to [Gitar](https://app.gitar.ai) for AI-assisted pull request reviews. Open a pull request and wait for `gitar-bot` to post its summary and inline feedback. You can reply to a bot comment with a request such as `Please fix this issue and run CI validation`; Gitar will propose a follow-up commit after validating the change.
