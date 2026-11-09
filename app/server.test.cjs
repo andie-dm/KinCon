@@ -46,9 +46,11 @@ test('production server keeps probes and starter API, and restricts static file 
   const health = await fetch(`${base}/healthz`);
   assert.equal(health.status, 200);
   assert.equal(await health.text(), 'ok\n');
+  // Readiness stays local so an Elasticsearch outage cannot remove the UI from
+  // the Service; dependency status is reported by /api/health.
   const readiness = await fetch(`${base}/readyz`);
-  assert.equal(readiness.status, 503);
-  assert.match(await readiness.text(), /^not ready:/);
+  assert.equal(readiness.status, 200);
+  assert.equal(await readiness.text(), 'ok\n');
   const sessions = await (await fetch(`${base}/api/sessions`)).json();
   assert.ok(sessions.sessions.length > 0);
   assert.ok(sessions.version);

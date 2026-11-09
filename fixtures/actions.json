@@ -1,0 +1,18 @@
+{
+  "_note": "Seeded fictional actions. Riley and Jules have NO likes between them, so the demo can show a private one-sided like followed by reciprocity. Exactly one seeded pair (Dana/Lena) is mutual; Marcus->Helena is deliberately one-sided.",
+  "actions": [
+    {"actor": "jules", "kind": "swipe", "target_type": "paper", "target_id": "doi_10.1609_aaai.v39i14.33617", "direction": "right"},
+    {"actor": "jules", "kind": "buddy", "target_type": "paper", "target_id": "doi_10.1609_aaai.v39i14.33617",
+     "occurrence": {"format": "poster", "starts_at": "2025-03-01T12:30:00-05:00", "ends_at": "2025-03-01T14:30:00-05:00"}},
+    {"actor": "priya", "kind": "swipe", "target_type": "paper", "target_id": "doi_10.1609_aaai.v39i7.32732", "direction": "right"},
+    {"actor": "priya", "kind": "buddy", "target_type": "paper", "target_id": "doi_10.1609_aaai.v39i7.32732",
+     "occurrence": {"format": "poster", "starts_at": "2025-03-01T12:30:00-05:00", "ends_at": "2025-03-01T14:30:00-05:00"}},
+    {"actor": "sam", "kind": "swipe", "target_type": "paper", "target_id": "doi_10.1609_aaai.v39i7.32732", "direction": "right"},
+    {"actor": "sam", "kind": "buddy", "target_type": "paper", "target_id": "doi_10.1609_aaai.v39i7.32732",
+     "occurrence": {"format": "poster", "starts_at": "2025-03-01T12:30:00-05:00", "ends_at": "2025-03-01T14:30:00-05:00"}},
+    {"actor": "marcus", "kind": "swipe", "target_type": "person", "target_id": "helena", "direction": "right"},
+    {"actor": "dana", "kind": "swipe", "target_type": "person", "target_id": "lena", "direction": "right"},
+    {"actor": "lena", "kind": "swipe", "target_type": "person", "target_id": "dana", "direction": "right"},
+    {"actor": "sam", "kind": "join", "target_type": "group", "target_id": "robot-learning-walk"}
+  ]
+}

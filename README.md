@@ -52,22 +52,23 @@ This repository is connected to [Gitar](https://app.gitar.ai) for AI-assisted pu
 
 ## Elasticsearch and Dash0
 
-The app indexes conference papers and scheduled occurrences in Elasticsearch and exposes keyword search at `/api/sessions/search?q=<query>`. Set `ELASTICSEARCH_URL`, `ELASTICSEARCH_API_KEY`, and optionally `ELASTICSEARCH_INDEX` when running locally. The default index is `conference-papers-2025-v1`; the app creates it and seeds demo papers on startup.
+The app reads the indexes written by the importers in `scripts/` (`conference-papers-2025-v1`, `conference-people-v1`, `conference-groups-v1`, `conference-actions-v1`, `conference-events-v1`); it does not create or seed indexes on startup. Load them with the commands in [docs/DATA.md](docs/DATA.md). Set `ELASTICSEARCH_URL` and `ELASTICSEARCH_API_KEY` (`ELASTIC_API_KEY` is also accepted). `/api/health` reports Elasticsearch status; `/healthz` and `/readyz` stay local so an Elasticsearch outage never removes the UI from the Service. Keyword search over main-track papers: `/api/sessions/search?q=<query>`.
 
-Dash0 telemetry uses OpenTelemetry for HTTP traces and metrics. Set `OTEL_EXPORTER_OTLP_ENDPOINT`, `OTEL_EXPORTER_OTLP_HEADERS`, and `OTEL_SERVICE_NAME` using the values from your Dash0 workspace. The app starts without telemetry when these values are absent, but search returns an explicit configuration error until Elasticsearch is configured.
+Dash0 telemetry uses OpenTelemetry for HTTP traces and metrics. Set `OTEL_EXPORTER_OTLP_ENDPOINT`, `OTEL_EXPORTER_OTLP_HEADERS`, and `OTEL_SERVICE_NAME` using the values from your Dash0 workspace. The app starts without telemetry when these values are absent.
 
 ## Backend API
 
-The backend uses bearer tokens from `DEMO_SESSION_TOKENS` to identify demo sessions. Configure two tokens such as `demo-user-1=... ,demo-user-2=...` in the Kubernetes Secret and send `Authorization: Bearer <token>`. The insecure `x-demo-user` header is available only when `ALLOW_INSECURE_DEMO_IDENTITY=true` for local development. The API persists profiles, cards and actions in Elasticsearch:
+Demo sessions: with `DEMO_SESSION_TOKENS=riley=<token>,jules=<token>` set (Secret key `demo-session-tokens`), send `Authorization: Bearer <token>`, or `POST /api/demo/session {"token":"<token>"}` to get a session cookie. Without tokens the demo runs in open mode and `POST /api/demo/session {"identity":"riley"|"jules"}` picks one of the two fictional identities. The actor always comes from the session, never from the request body. Full contract and privacy rules: [docs/DATA.md](docs/DATA.md).
 
-- `PUT /api/me` saves onboarding choices such as `stage`, `offers`, `asks`, `tags`, and `conversation_preferences`.
-- `GET /api/feed?deck=research|people|groups` returns ranked cards and hides cards already swiped by that viewer. Add `paperId` to find poster buddies.
-- `PUT /api/swipes/{type}/{id}` accepts `{"direction":"left"}` or `{"direction":"right"}` and is idempotent per viewer/card/direction.
-- `PUT /api/papers/{id}/buddy` explicitly shares poster interest.
-- `PUT /api/groups/{id}/join` joins a hosted meetup.
-- `GET /api/me/saved` returns saved papers, joined groups, and reciprocal people matches with editable intro drafts.
+- `PUT /api/me` saves onboarding choices (intent, offers, asks, tags, stage, conversation preference).
+- `GET /api/feed?deck=research|people|groups[&paperId][&format=oral|poster]` returns up to 30 ranked cards from Elasticsearch RRF and hides cards the viewer already swiped. Add `paperId` to find poster buddies.
+- `PUT /api/swipes/{paper|person|group}/{id}` (plural forms also accepted) takes `{"direction":"left"|"right"}`; an identical retry is a no-op.
+- `PUT /api/papers/{id}/buddy` explicitly shares interest in a saved poster.
+- `PUT /api/groups/{id}/join` joins a hosted meetup (saving a group does not join it).
+- `PUT /api/matches/{profileId}/opener` edits the private intro draft.
+- `GET /api/me/saved` returns saved papers, saved/joined groups and reciprocal matches.
 
-The feed uses the latest 20 swipes to adjust topic affinity. Seed people and groups are fictional demo data; paper/session records must be replaced or extended with the verified AAAI-25 import described in [PLAN.md](PLAN.md).
+Papers and schedules are the verified AAAI-25 import; people, groups and their actions are fictional demo fixtures.
 
 ## The day
 
@@ -324,3 +325,11 @@ Connect your own cluster to Radar Cloud. Hackathon participants get 3 months of 
 ## Help
 
 Find Roy, Nadav or Arlen at the Radar table, or ask in `#cnh-hackathon` on the [Radar Discord](https://radarhq.io/community/chat).
+
+## AAAI-25 replay: data, search and social actions
+
+The networking demo replays AAAI-25 (Philadelphia, Feb 25 - Mar 4, 2025). **Real:** the 3,028 main-track papers (titles, abstracts, every credited author, DOIs), checked against the official proceedings, and the published oral/poster schedules. **Fictional:** the 12 demo attendees, 3 meetups and their likes/joins (`is_fictional: true`). A poster listing never claims an author will be present.
+
+- Setup, ID and field contracts, ranking, privacy rules, example queries: [docs/DATA.md](docs/DATA.md)
+- Coverage and discrepancies: [reports/IMPORT_REPORT.md](reports/IMPORT_REPORT.md)
+- Commands: `python3 scripts/import_conference_papers.py --conference AAAI-25 --limit 100` (smoke) / `--limit 0` (full)

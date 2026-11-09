@@ -8,10 +8,9 @@
     "start": "node --require ./instrumentation.js server.js",
     "dev": "vite --host 127.0.0.1",
     "build": "vite build",
-    "test": "node --test src/demo.test.mjs server.test.cjs"
+    "test": "node --test src/demo.test.mjs server.test.cjs test/ranking.test.js test/server-guards.test.js test/live.test.js"
   },
   "dependencies": {
-    "@elastic/elasticsearch": "^9.4.3",
     "@opentelemetry/auto-instrumentations-node": "^0.81.2",
     "@opentelemetry/exporter-metrics-otlp-proto": "^0.223.1",
     "@opentelemetry/exporter-trace-otlp-proto": "^0.223.1",

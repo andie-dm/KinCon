@@ -16,3 +16,8 @@ fowpy-*.png
 
 npm-debug.log*
 .DS_Store
+
+# Cached third-party source downloads (re-create with scripts/fetch_sources.py).
+data/raw/
+__pycache__/
+.pytest_cache/

@@ -1,0 +1,29 @@
+{
+  "_note": "All three meetups are FICTIONAL, hosted by fictional attendees. Meeting points come from the event's sourced meeting_points; group 3 deliberately has no confirmed location.",
+  "groups": [
+    {"slug": "robot-learning-walk", "host": "marcus", "title": "Robot learning poster walk",
+     "topic": "Robot learning and 3D perception",
+     "description": "A small walking group that visits a handful of robot-learning and 3D-vision posters together, then compares notes.",
+     "tags": ["robotics", "3d-vision", "imitation-learning"],
+     "conversation_style": "walk_and_talk", "intended_audience": "Anyone curious about robot learning",
+     "audience_specified": false, "stage_restrictions": [],
+     "starts_at": "2025-03-01T12:30:00-05:00", "ends_at": "2025-03-01T13:15:00-05:00",
+     "meeting_point_id": "mp-exhibit-hall-e", "capacity": 6},
+    {"slug": "first-timers-circle", "host": "priya", "title": "First-timers' coffee circle",
+     "topic": "Navigating your first AAAI",
+     "description": "Undergrads and grad students at their first AAAI swap tips on reading posters and starting conversations.",
+     "tags": ["computer-vision", "3d-vision"],
+     "conversation_style": "small_circle", "intended_audience": "Undergraduate and graduate students attending their first AAAI",
+     "audience_specified": true, "stage_restrictions": ["undergrad", "grad"],
+     "starts_at": "2025-03-01T15:00:00-05:00", "ends_at": "2025-03-01T15:45:00-05:00",
+     "meeting_point_id": "mp-level-200-west", "capacity": 8},
+    {"slug": "llm-eval-circle", "host": "lena", "title": "LLM evaluation practitioners circle",
+     "topic": "Evaluating LLM features in production",
+     "description": "Practitioners compare how they evaluate LLM features before and after launch.",
+     "tags": ["llms", "recommender-systems"],
+     "conversation_style": "roundtable", "intended_audience": "Practitioners shipping LLM features",
+     "audience_specified": false, "stage_restrictions": [],
+     "starts_at": "2025-03-01T16:00:00-05:00", "ends_at": "2025-03-01T16:45:00-05:00",
+     "meeting_point_id": null, "capacity": 8}
+  ]
+}
