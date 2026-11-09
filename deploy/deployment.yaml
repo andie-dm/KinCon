@@ -24,7 +24,35 @@ spec:
               containerPort: 8080
           env:
             - name: TEAM_NAME
-              value: "__TEAM__"
+              value: "kincon"
+            - name: ELASTICSEARCH_URL
+              valueFrom:
+                secretKeyRef:
+                  name: app-credentials
+                  key: elasticsearch-url
+                  optional: true
+            - name: ELASTICSEARCH_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: app-credentials
+                  key: elasticsearch-api-key
+                  optional: true
+            - name: ELASTICSEARCH_INDEX
+              value: "conference-sessions"
+            - name: OTEL_SERVICE_NAME
+              value: "fowpy"
+            - name: OTEL_EXPORTER_OTLP_ENDPOINT
+              valueFrom:
+                secretKeyRef:
+                  name: app-credentials
+                  key: dash0-otlp-endpoint
+                  optional: true
+            - name: OTEL_EXPORTER_OTLP_HEADERS
+              valueFrom:
+                secretKeyRef:
+                  name: app-credentials
+                  key: dash0-otlp-headers
+                  optional: true
           resources:
             requests:
               cpu: 100m

@@ -5,6 +5,16 @@
   "description": "Starter app for the Radar AI SRE track at the Cloud Native Hackathon",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js"
+    "start": "node --require ./instrumentation.js server.js"
+  },
+  "dependencies": {
+    "@elastic/elasticsearch": "^9.4.3",
+    "@opentelemetry/auto-instrumentations-node": "^0.81.2",
+    "@opentelemetry/exporter-metrics-otlp-proto": "^0.223.1",
+    "@opentelemetry/exporter-trace-otlp-proto": "^0.223.1",
+    "@opentelemetry/resources": "^2.12.1",
+    "@opentelemetry/sdk-metrics": "^2.12.1",
+    "@opentelemetry/sdk-node": "^0.223.1",
+    "@opentelemetry/semantic-conventions": "^1.45.0"
   }
 }
