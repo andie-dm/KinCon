@@ -38,7 +38,7 @@ spec:
                   key: elasticsearch-api-key
                   optional: true
             - name: ELASTICSEARCH_INDEX
-              value: "conference-sessions"
+              value: "conference-papers-2025-v1"
             - name: OTEL_SERVICE_NAME
               value: "fowpy"
             - name: OTEL_EXPORTER_OTLP_ENDPOINT
