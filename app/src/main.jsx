@@ -259,7 +259,7 @@ function App() {
 
   return <div className="app-shell">
     <aside className="sidebar">
-      <a className="brand" href="/" aria-label="Fowpy home"><span className="brand-mark"><Icon name="spark" size={25} /></span>fowpy<span className="brand-period">.</span></a>
+      <a className="brand" href="/" aria-label="KinCon home"><span className="brand-mark"><Icon name="spark" size={25} /></span>KinCon<span className="brand-period">.</span></a>
       <div className="event-badge"><span className="live-dot" /> AAAI-25 replay <span className="city">Philadelphia, PA</span></div>
       <span className="nav-label">MAKE A CONNECTION</span>
       <nav className="main-nav" aria-label="Main navigation">
