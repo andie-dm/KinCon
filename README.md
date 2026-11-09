@@ -69,7 +69,7 @@ Local project linking lives in `.netlify/`, which is ignored by git. If your
 team defaults to team-login protection, configure this demo project's visitor
 access to allow the public; do not change unrelated projects or team defaults.
 For automatic deployments, connect this existing Netlify project to
-`andie-dm/fowpy` in **Project configuration > Developer settings > Continuous
+`andie-dm/KinCon` in **Project configuration > Developer settings > Continuous
 deployment > Repository**, with **main** as the production branch. Grant the
 Netlify GitHub App access to this repository. `netlify.toml` supplies the build
 settings; each push to `main` then builds and publishes the UI at the same URL.
