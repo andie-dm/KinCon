@@ -53,6 +53,12 @@ spec:
                   name: app-credentials
                   key: dash0-otlp-headers
                   optional: true
+            - name: DEMO_SESSION_TOKENS
+              valueFrom:
+                secretKeyRef:
+                  name: app-credentials
+                  key: demo-session-tokens
+                  optional: true
           resources:
             requests:
               cpu: 100m

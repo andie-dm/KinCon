@@ -7,6 +7,15 @@ const port = Number(process.env.PORT || 8080);
 const team = process.env.TEAM_NAME || 'kincon';
 const version = process.env.APP_VERSION || 'dev';
 const store = createStore();
+const allowInsecureIdentity = process.env.ALLOW_INSECURE_DEMO_IDENTITY === 'true';
+const demoTokens = new Map(
+  (process.env.DEMO_SESSION_TOKENS || '')
+    .split(',')
+    .map((entry) => entry.trim().split('='))
+    .filter(([id, token]) => id && token),
+);
+let storeReady = false;
+let storeFailure = null;
 
 function json(res, status, body) {
   res.writeHead(status, { 'content-type': 'application/json' });
@@ -14,8 +23,18 @@ function json(res, status, body) {
 }
 
 function viewerId(req) {
-  const header = req.headers['x-demo-user'];
-  return typeof header === 'string' && header.trim() ? header.trim() : 'demo-user-1';
+  if (allowInsecureIdentity) {
+    const header = req.headers['x-demo-user'];
+    if (typeof header === 'string' && header.trim()) return header.trim();
+  }
+  const authorization = req.headers.authorization;
+  const token = authorization?.startsWith('Bearer ') ? authorization.slice(7) : '';
+  for (const [id, expectedToken] of demoTokens) {
+    if (token === expectedToken) return id;
+  }
+  const error = new Error('a valid demo session token is required');
+  error.statusCode = 401;
+  throw error;
 }
 
 function readBody(req) {
@@ -64,6 +83,15 @@ function latestSwipes(actions) {
     const previous = latest.get(key);
     if (!previous || new Date(action.created_at) > new Date(previous.created_at)) {
       latest.set(key, action);
+    }
+
+    async function hasCurrentRight(actorId, targetId) {
+      const actions = latestSwipes(await actionsFor(actorId));
+      return actions.some(
+        (action) => action.action === 'right'
+          && action.target_type === 'person'
+          && action.target_id === targetId,
+      );
     }
   }
   return [...latest.values()].sort((left, right) => new Date(right.created_at) - new Date(left.created_at));
@@ -239,30 +267,24 @@ async function swipe(req, type, id) {
   );
   if (!target) return { status: 404, body: { error: 'target was not found' } };
 
-  await store.put(store.indexes.actions, actionId(actorId, targetType, id, body.direction), {
-    id: actionId(actorId, targetType, id, body.direction),
+  const swipeId = actionId(actorId, targetType, id, 'swipe');
+  await store.put(store.indexes.actions, swipeId, {
+    id: swipeId,
     actor_id: actorId,
     action: body.direction,
     target_type: targetType,
     target_id: id,
     created_at: new Date().toISOString(),
   });
+  await Promise.all([
+    store.remove(store.indexes.actions, actionId(actorId, targetType, id, 'left')),
+    store.remove(store.indexes.actions, actionId(actorId, targetType, id, 'right')),
+  ]);
 
   let matched = false;
   let draft = null;
   if (targetType === 'person' && body.direction === 'right') {
-    const reciprocal = await store.search(store.indexes.actions, {
-      bool: {
-        must: [
-          { term: { actor_id: id } },
-          { term: { action: 'right' } },
-          { term: { target_type: 'person' } },
-          { term: { target_id: actorId } },
-        ],
-      },
-      size: 1,
-    });
-    matched = reciprocal.length > 0;
+    matched = await hasCurrentRight(id, actorId);
     draft = introDraft(await store.get(store.indexes.people, actorId), target);
   }
 
@@ -293,21 +315,11 @@ async function explicitAction(req, type, id, action) {
 async function saved(req) {
   const actorId = viewerId(req);
   const actions = await actionsFor(actorId);
-  const rightPeople = actions.filter((action) => action.action === 'right' && action.target_type === 'person');
+  const currentSwipes = latestSwipes(actions);
+  const rightPeople = currentSwipes.filter((action) => action.action === 'right' && action.target_type === 'person');
   const matches = [];
   for (const action of rightPeople) {
-    const reciprocal = await store.search(store.indexes.actions, {
-      bool: {
-        must: [
-          { term: { actor_id: action.target_id } },
-          { term: { action: 'right' } },
-          { term: { target_type: 'person' } },
-          { term: { target_id: actorId } },
-        ],
-      },
-      size: 1,
-    });
-    if (reciprocal.length > 0) {
+    if (await hasCurrentRight(action.target_id, actorId)) {
       const person = await store.get(store.indexes.people, action.target_id);
       matches.push({ ...personCard(await store.get(store.indexes.people, actorId), person), draft: introDraft(await store.get(store.indexes.people, actorId), person) });
     }
@@ -315,7 +327,10 @@ async function saved(req) {
 
   const research = [];
   const groupsSaved = [];
-  for (const action of actions.filter((item) => item.action === 'right' || item.action === 'join' || item.action === 'buddy')) {
+  for (const action of [
+    ...currentSwipes,
+    ...actions.filter((item) => item.action === 'join' || item.action === 'buddy'),
+  ]) {
     if (action.target_type === 'paper') {
       const paper = await store.get(store.indexes.sessions, action.target_id);
       if (paper) research.push(researchCard(paper));
@@ -331,12 +346,16 @@ async function saved(req) {
 async function handle(req, res) {
   const url = new URL(req.url, 'http://localhost');
   if (url.pathname === '/healthz' || url.pathname === '/readyz') {
-    res.writeHead(200, { 'content-type': 'text/plain' });
-    return res.end('ok\n');
+    const ready = url.pathname === '/healthz' || storeReady;
+    res.writeHead(ready ? 200 : 503, { 'content-type': 'text/plain' });
+    return res.end(ready ? 'ok\n' : `not ready: ${storeFailure || 'Elasticsearch initialization is pending'}\n`);
   }
   if (url.pathname === '/') {
     res.writeHead(200, { 'content-type': 'text/html; charset=utf-8' });
     return res.end(`<!doctype html><title>${team}</title><h1>${team}</h1><p>version ${version}</p>`);
+  }
+  if (!storeReady) {
+    return json(res, 503, { error: storeFailure || 'Elasticsearch initialization is pending' });
   }
   if (req.method === 'GET' && url.pathname === '/api/sessions') {
     const records = await store.search(store.indexes.sessions, { match_all: {} });
@@ -358,7 +377,7 @@ async function handle(req, res) {
   if (req.method === 'PUT' && url.pathname === '/api/me') {
     const body = await readBody(req);
     const id = viewerId(req);
-    const profile = await store.update(store.indexes.people, id, { id, ...body, discovery_opt_in: true });
+    const profile = await store.update(store.indexes.people, id, { ...body, id, discovery_opt_in: true });
     return json(res, 200, profile);
   }
 
@@ -378,9 +397,25 @@ const server = http.createServer((req, res) => {
   });
 });
 
+async function initializeWithRetry() {
+  for (let attempt = 1; attempt <= 5; attempt += 1) {
+    try {
+      await store.initialize();
+      storeReady = true;
+      storeFailure = null;
+      console.log('Elasticsearch initialization succeeded');
+      return;
+    } catch (error) {
+      storeFailure = error.message;
+      console.error(`Elasticsearch initialization attempt ${attempt} failed:`, error.message);
+      if (attempt < 5) await new Promise((resolve) => setTimeout(resolve, attempt * 1000));
+    }
+  }
+}
+
 server.listen(port, () => {
   console.log(`listening on :${port}, version ${version}`);
-  store.initialize().catch((error) => console.error('Elasticsearch initialization failed:', error.message));
+  initializeWithRetry();
 });
 
 const shutdown = () => server.close(async () => {

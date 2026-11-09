@@ -141,6 +141,14 @@ function createStore({ node = process.env.ELASTICSEARCH_URL, apiKey = process.en
     return get(index, id);
   }
 
+  async function remove(index, id) {
+    try {
+      await requireClient().delete({ index, id, refresh: 'wait_for' });
+    } catch (error) {
+      if (error.meta?.statusCode !== 404) throw error;
+    }
+  }
+
   return {
     indexes: INDEXES,
     initialize,
@@ -148,6 +156,7 @@ function createStore({ node = process.env.ELASTICSEARCH_URL, apiKey = process.en
     search,
     put,
     update,
+    remove,
   };
 }
 

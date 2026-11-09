@@ -14,7 +14,7 @@ Dash0 telemetry uses OpenTelemetry for HTTP traces and metrics. Set `OTEL_EXPORT
 
 ## Backend API
 
-The backend uses the `x-demo-user` header as the demo session identity; omit it to use `demo-user-1`. The API persists profiles, cards and actions in Elasticsearch:
+The backend uses bearer tokens from `DEMO_SESSION_TOKENS` to identify demo sessions. Configure two tokens such as `demo-user-1=... ,demo-user-2=...` in the Kubernetes Secret and send `Authorization: Bearer <token>`. The insecure `x-demo-user` header is available only when `ALLOW_INSECURE_DEMO_IDENTITY=true` for local development. The API persists profiles, cards and actions in Elasticsearch:
 
 - `PUT /api/me` saves onboarding choices such as `stage`, `offers`, `asks`, `tags`, and `conversation_preferences`.
 - `GET /api/feed?deck=research|people|groups` returns ranked cards and hides cards already swiped by that viewer. Add `paperId` to find poster buddies.
@@ -95,6 +95,7 @@ Your repo and your image are public, so an API key for a hosted AI model, or any
    - `elasticsearch-api-key`
    - `dash0-otlp-endpoint`
    - `dash0-otlp-headers`
+   - `demo-session-tokens`
 
    Copy the Dash0 endpoint and headers exactly as provided by your Dash0 workspace.
 2. **Read it in your app.** Add this to the `env:` list of the container in `deploy/deployment.yaml`, then push. Only the Secret's name goes in git, never the key:
