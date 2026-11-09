@@ -55,26 +55,19 @@ async function initializeSearchIndex() {
       index: searchIndex,
       refresh: 'wait_for',
       operations: sessions.flatMap((session) => [
-        { create: { _id: `fowpy-seed-${session.id}` } },
+        { index: { _id: String(session.id) } },
         session,
       ]),
     });
 
     if (result.errors) {
       const failures = result.items
-        .map((item) => item.create?.error)
+        .map((item) => item.index?.error)
         .filter(Boolean);
-      const unexpectedFailures = failures.filter(
-        (error) => error.type !== 'version_conflict_engine_exception',
+      console.error(
+        `Elasticsearch bulk indexing had ${failures.length} failures:`,
+        failures[0]?.reason,
       );
-      if (unexpectedFailures.length > 0) {
-        console.error(
-          `Elasticsearch bulk indexing had ${unexpectedFailures.length} failures:`,
-          unexpectedFailures[0].reason,
-        );
-        return;
-      }
-      console.log(`Elasticsearch seed sessions already existed in index ${searchIndex}`);
       return;
     }
 
