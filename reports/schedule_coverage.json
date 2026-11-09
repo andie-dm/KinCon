@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-11-09T21:38:03.966849+00:00",
+  "generated_at": "2026-11-09T21:48:28.473578+00:00",
   "note": "Schedule coverage is reported separately from bibliographic coverage (reports/paper_coverage.json).",
   "sources": {
     "oral_main_track_2025-02-22.pdf": {
@@ -1086,7 +1086,7 @@
           "match_method": "title_prefix+author_confirmed",
           "match_score": 1.0,
           "time_status": "published",
-          "verified_at": "2026-11-09T21:38:03.966849+00:00",
+          "verified_at": "2026-11-09T21:48:28.473578+00:00",
           "location_status": "room_not_published",
           "verification_status": "time_verified_room_unconfirmed"
         },
@@ -1113,7 +1113,7 @@
           "match_method": "title_exact+author_confirmed",
           "match_score": 1.0,
           "time_status": "published",
-          "verified_at": "2026-11-09T21:38:03.966849+00:00",
+          "verified_at": "2026-11-09T21:48:28.473578+00:00",
           "location_status": "venue_published",
           "verification_status": "verified"
         }

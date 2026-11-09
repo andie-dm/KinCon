@@ -2,7 +2,7 @@
 
 Connection settings come only from the environment:
   ELASTICSEARCH_URL   e.g. https://my-deployment.es.us-east-1.aws.elastic.cloud
-  ELASTIC_API_KEY     base64 "id:key" API key (preferred), or
+  ELASTICSEARCH_API_KEY  base64 "id:key" API key (ELASTIC_API_KEY also accepted), or
   ELASTIC_USERNAME / ELASTIC_PASSWORD
 Credentials are never logged; errors print the status and ES error type only.
 """
@@ -31,7 +31,7 @@ class ES:
             raise SystemExit("ELASTICSEARCH_URL is not set (see docs/DATA.md).")
         self.session = requests.Session()
         self.session.headers["content-type"] = "application/json"
-        key = api_key or os.environ.get("ELASTIC_API_KEY")
+        key = api_key or os.environ.get("ELASTICSEARCH_API_KEY") or os.environ.get("ELASTIC_API_KEY")
         if key:
             self.session.headers["authorization"] = f"ApiKey {key}"
         elif os.environ.get("ELASTIC_USERNAME"):

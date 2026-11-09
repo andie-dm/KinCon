@@ -50,6 +50,26 @@ Run focused checks with `npm --prefix app test`.
 
 This repository is connected to [Gitar](https://app.gitar.ai) for AI-assisted pull request reviews. Open a pull request and wait for `gitar-bot` to post its summary and inline feedback. You can reply to a bot comment with a request such as `Please fix this issue and run CI validation`; Gitar will propose a follow-up commit after validating the change.
 
+## Elasticsearch and Dash0
+
+The app reads the indexes written by the importers in `scripts/` (`conference-papers-2025-v1`, `conference-people-v1`, `conference-groups-v1`, `conference-actions-v1`, `conference-events-v1`); it does not create or seed indexes on startup. Load them with the commands in [docs/DATA.md](docs/DATA.md). Set `ELASTICSEARCH_URL` and `ELASTICSEARCH_API_KEY` (`ELASTIC_API_KEY` is also accepted). `/api/health` reports Elasticsearch status; `/healthz` and `/readyz` stay local so an Elasticsearch outage never removes the UI from the Service. Keyword search over main-track papers: `/api/sessions/search?q=<query>`.
+
+Dash0 telemetry uses OpenTelemetry for HTTP traces and metrics. Set `OTEL_EXPORTER_OTLP_ENDPOINT`, `OTEL_EXPORTER_OTLP_HEADERS`, and `OTEL_SERVICE_NAME` using the values from your Dash0 workspace. The app starts without telemetry when these values are absent.
+
+## Backend API
+
+Demo sessions: with `DEMO_SESSION_TOKENS=riley=<token>,jules=<token>` set (Secret key `demo-session-tokens`), send `Authorization: Bearer <token>`, or `POST /api/demo/session {"token":"<token>"}` to get a session cookie. Without tokens the demo runs in open mode and `POST /api/demo/session {"identity":"riley"|"jules"}` picks one of the two fictional identities. The actor always comes from the session, never from the request body. Full contract and privacy rules: [docs/DATA.md](docs/DATA.md).
+
+- `PUT /api/me` saves onboarding choices (intent, offers, asks, tags, stage, conversation preference).
+- `GET /api/feed?deck=research|people|groups[&paperId][&format=oral|poster]` returns up to 30 ranked cards from Elasticsearch RRF and hides cards the viewer already swiped. Add `paperId` to find poster buddies.
+- `PUT /api/swipes/{paper|person|group}/{id}` (plural forms also accepted) takes `{"direction":"left"|"right"}`; an identical retry is a no-op.
+- `PUT /api/papers/{id}/buddy` explicitly shares interest in a saved poster.
+- `PUT /api/groups/{id}/join` joins a hosted meetup (saving a group does not join it).
+- `PUT /api/matches/{profileId}/opener` edits the private intro draft.
+- `GET /api/me/saved` returns saved papers, saved/joined groups and reciprocal matches.
+
+Papers and schedules are the verified AAAI-25 import; people, groups and their actions are fictional demo fixtures.
+
 ## The day
 
 - 11:00: before you write any code, get your cluster, open it in Radar Cloud, and connect your agent to Radar (steps below).
@@ -113,6 +133,16 @@ Your repo and your image are public, so an API key for a hosted AI model, or any
    kubectl -n team-<team-name> create secret generic app-credentials --from-literal=api-key="$API_KEY"
    ```
    Create it yourself rather than giving the key to your agent: whatever you paste into a chat stays in its history.
+
+   For the built-in Elasticsearch and Dash0 integrations, use these `stringData` keys in the same Secret:
+
+   - `elasticsearch-url`
+   - `elasticsearch-api-key`
+   - `dash0-otlp-endpoint`
+   - `dash0-otlp-headers`
+   - `demo-session-tokens`
+
+   Copy the Dash0 endpoint and headers exactly as provided by your Dash0 workspace.
 2. **Read it in your app.** Add this to the `env:` list of the container in `deploy/deployment.yaml`, then push. Only the Secret's name goes in git, never the key:
    ```yaml
    - name: API_KEY

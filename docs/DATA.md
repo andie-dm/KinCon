@@ -16,7 +16,7 @@ A schedule listing says where a paper is scheduled. It never claims that a named
 ```bash
 pip install -r requirements.txt
 export ELASTICSEARCH_URL=...        # e.g. http://localhost:9200 or your Elastic Cloud endpoint
-export ELASTIC_API_KEY=...          # omit for an unsecured local node
+export ELASTICSEARCH_API_KEY=...    # omit for an unsecured local node (ELASTIC_API_KEY also accepted)
 export ES_INFERENCE_ID=.elser-2-elastic   # hosted (EIS); local default is .multilingual-e5-small-elasticsearch
 
 python3 scripts/fetch_sources.py            # cache sources in data/raw (git-ignored), write manifest.json
@@ -38,7 +38,7 @@ To rehearse the reciprocal demo again, run `python3 scripts/seed_social_fixtures
 docker run -d --name aaai-es -p 127.0.0.1:9200:9200 -e discovery.type=single-node -e xpack.security.enabled=false -e xpack.license.self_generated.type=trial -e "ES_JAVA_OPTS=-Xms2g -Xmx2g" -m 6g -v aaai-es-data:/usr/share/elasticsearch/data docker.elastic.co/elasticsearch/elasticsearch:9.1.0
 ```
 
-For a hosted deployment, set `ELASTICSEARCH_URL` and `ELASTIC_API_KEY` and rerun the same commands. In the cluster, the app reads both from the Secret `app-credentials` (keys `elasticsearch-url`, `elastic-api-key`). Create that Secret through Radar's resource editor, never in git.
+For a hosted deployment, set `ELASTICSEARCH_URL` and `ELASTICSEARCH_API_KEY` and rerun the same commands. In the cluster, the app reads both from the Secret `app-credentials` (keys `elasticsearch-url`, `elasticsearch-api-key`, optionally `demo-session-tokens` as `riley=<token>,jules=<token>`). Create that Secret through Radar's resource editor, never in git.
 
 ### Source access
 
@@ -108,7 +108,7 @@ Retrieval uses the `rrf` retriever (`rank_window_size` 50, `rank_constant` 60) o
 
 | Behaviour | Implementation |
 |---|---|
-| Actor | `demo_session` HttpOnly cookie → one of two fixed fictional identities. Never read from the body or path. Demo-grade sessions only |
+| Actor | Bearer token or `demo_session` HttpOnly cookie. With `DEMO_SESSION_TOKENS` set, only a configured token maps to Riley or Jules; without it (open demo mode) the cookie names one of the two fictional identities. Never read from the body or path |
 | Swipe idempotency | Painless `_update`: same direction → `noop`, so `effective_at`, `revision` and the tag snapshot don't move. Affinity and recency count it once |
 | Changed swipe | Direction flips: `revision+1`, `effective_at` advances, tag snapshot refreshed. A flip to left clears the private opener |
 | Near-real-time | Action writes use `refresh=wait_for`, so an immediate reload sees the swipe. Reciprocity uses real-time `GET` of the reverse action's deterministic ID |

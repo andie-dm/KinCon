@@ -32,3 +32,15 @@ test('inherited object keys are not demo identities', async (t) => {
   const forged = await fetch(`${base}/api/me`, { headers: { cookie: 'demo_session=constructor' } });
   assert.equal(forged.status, 401);
 });
+
+test('with DEMO_SESSION_TOKENS set, only a valid token establishes a session', async (t) => {
+  const base = await start(t, { es: client({ url: 'http://127.0.0.1:9' }), sessionTokens: 'riley=tok-r1,jules=tok-j2,constructor=x' });
+  // Naming an identity is not enough once tokens are configured.
+  assert.equal((await fetch(`${base}/api/demo/session`, { method: 'POST', body: JSON.stringify({ identity: 'riley' }) })).status, 401);
+  assert.equal((await fetch(`${base}/api/me`, { headers: { cookie: 'demo_session=riley' } })).status, 401);
+  assert.equal((await fetch(`${base}/api/me`, { headers: { authorization: 'Bearer x' } })).status, 401);
+  const ok = await fetch(`${base}/api/demo/session`, { method: 'POST', body: JSON.stringify({ token: 'tok-j2' }) });
+  assert.equal(ok.status, 200);
+  assert.equal((await ok.json()).identity, 'jules');
+  assert.match(ok.headers.get('set-cookie'), /^demo_session=tok-j2;/);
+});

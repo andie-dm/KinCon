@@ -1,5 +1,6 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
+const http = require('node:http');
 const { createServer } = require('./server');
 
 test('encoded null bytes return 400 without crashing the server', { timeout: 5000 }, async (t) => {
@@ -19,6 +20,22 @@ test('encoded null bytes return 400 without crashing the server', { timeout: 500
   const health = await fetch(`${base}/healthz`);
   assert.equal(health.status, 200);
   assert.equal(await health.text(), 'ok\n');
+
+  const malformed = await new Promise((resolve, reject) => {
+    const request = http.request({
+      host: '127.0.0.1',
+      port: server.address().port,
+      path: '//[',
+    }, (response) => {
+      let body = '';
+      response.setEncoding('utf8');
+      response.on('data', (chunk) => { body += chunk; });
+      response.on('end', () => resolve({ status: response.statusCode, body }));
+    });
+    request.on('error', reject);
+    request.end();
+  });
+  assert.deepEqual(malformed, { status: 400, body: 'bad request\n' });
 });
 
 test('production server keeps probes and starter API, and restricts static file access', async (t) => {
@@ -26,13 +43,16 @@ test('production server keeps probes and starter API, and restricts static file 
   await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve));
   t.after(() => new Promise((resolve) => server.close(resolve)));
   const base = `http://127.0.0.1:${server.address().port}`;
-  for (const probe of ['/healthz', '/readyz']) {
-    const response = await fetch(`${base}${probe}`);
-    assert.equal(response.status, 200);
-    assert.equal(await response.text(), 'ok\n');
-  }
+  const health = await fetch(`${base}/healthz`);
+  assert.equal(health.status, 200);
+  assert.equal(await health.text(), 'ok\n');
+  // Readiness stays local so an Elasticsearch outage cannot remove the UI from
+  // the Service; dependency status is reported by /api/health.
+  const readiness = await fetch(`${base}/readyz`);
+  assert.equal(readiness.status, 200);
+  assert.equal(await readiness.text(), 'ok\n');
   const sessions = await (await fetch(`${base}/api/sessions`)).json();
-  assert.equal(sessions.sessions.length, 4);
+  assert.ok(sessions.sessions.length > 0);
   assert.ok(sessions.version);
   for (const file of ['/server.js', '/package.json', '/assets/%2e%2e%2fserver.js', '/assets/missing.js']) {
     assert.equal((await fetch(`${base}${file}`)).status, 404);

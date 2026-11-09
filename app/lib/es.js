@@ -1,5 +1,5 @@
 // Minimal Elasticsearch REST client on Node's built-in fetch.
-// Settings: ELASTICSEARCH_URL and ELASTIC_API_KEY (from a Kubernetes Secret in
+// Settings: ELASTICSEARCH_URL and ELASTICSEARCH_API_KEY (ELASTIC_API_KEY also accepted; from a Kubernetes Secret in
 // the cluster). Credentials are never logged or returned to clients.
 'use strict';
 
@@ -12,7 +12,7 @@ class ESError extends Error {
   }
 }
 
-function client({ url = process.env.ELASTICSEARCH_URL, apiKey = process.env.ELASTIC_API_KEY } = {}) {
+function client({ url = process.env.ELASTICSEARCH_URL, apiKey = process.env.ELASTICSEARCH_API_KEY || process.env.ELASTIC_API_KEY } = {}) {
   if (!url) return null;
   const base = url.replace(/\/+$/, '');
   const headers = { 'content-type': 'application/json' };

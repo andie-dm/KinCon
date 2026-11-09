@@ -75,5 +75,5 @@ The 12:30-2:30 pm Exhibit Hall E block itself is confirmed by the official poste
 
 ## Remaining
 
-- Hosted data is loaded and verified. To deploy the app against it, create Secret `app-credentials` (keys `elasticsearch-url`, `elastic-api-key`) through Radar's resource editor and restart the app. The importer used `ES_INFERENCE_ID=.elser-2-elastic`.
+- Hosted data is loaded and verified. To deploy the app against it, create Secret `app-credentials` (keys `elasticsearch-url`, `elasticsearch-api-key`, optionally `demo-session-tokens` as `riley=<token>,jules=<token>`) through Radar's resource editor and restart the app. The importer used `ES_INFERENCE_ID=.elser-2-elastic`.
 - The API key used for the import was shared in a chat transcript; rotate it and put the new key in the Secret.
