@@ -1,7 +1,7 @@
 import React, { useEffect, useId, useMemo, useRef, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import { cards, defaultProfile, findCard, identities, intents, preferences } from './fixtures.mjs';
-import { actionKey, feed, freshState, introFor, isMatched, isSaved, parseState, STORAGE_KEY, swipe } from './demo.mjs';
+import { actionKey, conversation, feed, freshState, incomingRequests, introFor, isMatched, isSaved, MAX_MESSAGE_LENGTH, parseState, requestStatus, respond, sendMessage, STORAGE_KEY, swipe } from './demo.mjs';
 import './styles.css';
 
 function Icon({ name, size = 20, ...props }) {
@@ -21,6 +21,9 @@ function Icon({ name, size = 20, ...props }) {
     check: <path d="m5 12 4 4L19 6" />,
     copy: <><rect x="8" y="8" width="12" height="13" rx="2" /><path d="M15 8V3H3v13h5" /></>,
     undo: <><path d="M4 10h10a6 6 0 0 1 0 12M4 10l5-5m-5 5 5 5" /></>,
+    bell: <><path d="M6 16V11a6 6 0 0 1 12 0v5l2 2H4Z" /><path d="M10 21a2 2 0 0 0 4 0" /></>,
+    chat: <path d="M4 5h16v11H9l-5 4Z" />,
+    send: <path d="m4 12 16-8-6 16-3-7Z" />,
   };
   return <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" {...props}>{paths[name] || paths.spark}</svg>;
 }
@@ -83,6 +86,25 @@ function ProfileForm({ profile, onSave }) {
   </form>;
 }
 
+function ChatWindow({ me, other, thread, draft, onSend }) {
+  const endRef = useRef(null);
+  const [text, setText] = useState(thread.length ? '' : draft);
+  const first = other.title.split(' ')[0];
+  useEffect(() => { endRef.current?.scrollIntoView({ block: 'end' }); }, [thread.length]);
+  return <div className="chat">
+    <div className="chat-thread" aria-live="polite">
+      {thread.length === 0 && <p className="fine chat-empty">You're connected. Say hello and suggest a place to meet.</p>}
+      {thread.map((message, index) => <div key={`${message.at}-${index}`} className={message.from === me ? 'bubble mine' : 'bubble theirs'}><p>{message.body}</p><small>{message.from === me ? 'You' : first} · {new Date(message.at).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}</small></div>)}
+      <span ref={endRef} />
+    </div>
+    <form className="chat-compose" onSubmit={(event) => { event.preventDefault(); if (onSend(text)) setText(''); }}>
+      <label className="field">Message {first}<textarea rows="3" value={text} maxLength={MAX_MESSAGE_LENGTH} onChange={(event) => setText(event.target.value)} onKeyDown={(event) => { if (event.key === 'Enter' && !event.shiftKey) { event.preventDefault(); event.currentTarget.form.requestSubmit(); } }} /></label>
+      <button className="button primary" type="submit" disabled={!text.trim()}><Icon name="send" size={17} /> Send</button>
+    </form>
+    <p className="fine">Local demo: messages stay in this browser. Open a second tab as {first} to reply live.</p>
+  </div>;
+}
+
 function App() {
   const [initial] = useState(() => {
     try { return { state: parseState(localStorage.getItem(STORAGE_KEY)), error: '' }; }
@@ -108,6 +130,7 @@ function App() {
   const saved = cards.filter((card) => isSaved(state, actor, card) && (card.type !== 'people' || isMatched(state, actor, card.id)));
   const matches = saved.filter((card) => card.type === 'people');
   const pending = cards.filter((card) => card.type === 'people' && isSaved(state, actor, card) && !isMatched(state, actor, card.id));
+  const requests = incomingRequests(state, actor).map((id) => findCard('people', id)).filter(Boolean);
   const joined = cards.filter((card) => card.type === 'groups' && state.joins[actionKey(actor, 'groups', card.id)]);
   const modalMatched = modal?.card?.type === 'people' && isMatched(state, actor, modal.card.id);
 
@@ -147,8 +170,9 @@ function App() {
     setPinned(null);
     setDrag(0);
     if (direction === 'right' && card.type === 'people') {
+      const first = card.title.split(' ')[0];
       if (isMatched(next, actor, card.id)) setModal({ kind: 'match', card });
-      setNotice(isMatched(next, actor, card.id) ? `You and ${card.title.split(' ')[0]} matched!` : 'Interest saved privately. A match needs a like from both people.');
+      setNotice(isMatched(next, actor, card.id) ? `You and ${first} are both interested. Your chat is open.` : `Request sent. ${first} will be notified and can accept or decline.`);
     } else {
       setNotice(direction === 'left' ? 'Passed. On to your next discovery.' : card.type === 'groups' ? 'Meetup saved. Join separately to confirm attendance.' : 'Research saved to your collection.');
     }
@@ -203,23 +227,33 @@ function App() {
     setNotice(`Now exploring as ${identities.find((person) => person.id === id).name.split(' ')[0]}.`);
   }
 
-  async function copyIntro(card) {
-    try { await navigator.clipboard.writeText(introFor(state, actor, card)); setNotice('Intro copied. You choose when and where to send it.'); }
-    catch { setNotice('Clipboard is unavailable. Select and copy the intro text manually.'); }
+
+  function answer(card, decision) {
+    if (!commit(respond(state, actor, card.id, decision))) return;
+    if (decision === 'accepted') { setModal({ kind: 'chat', card }); setNotice(`You accepted ${card.title.split(' ')[0]}'s request. Say hello!`); }
+    else setNotice('Request declined. They will only see that it was not accepted.');
+  }
+
+  function send(card, text) {
+    try { return commit(sendMessage(state, actor, card.id, text)); }
+    catch (failure) { setNotice(failure.message); return false; }
   }
 
   function detailBody(card) {
     const matched = card.type === 'people' && isMatched(state, actor, card.id);
     const liked = isSaved(state, actor, card);
+    const status = card.type === 'people' ? requestStatus(state, actor, card.id) : 'none';
+    const incoming = card.type === 'people' && requestStatus(state, card.id, actor) === 'pending';
+    const first = card.title.split(' ')[0];
     return <>
       <p className="eyebrow">{card.type === 'research' ? 'Fictional research fixture' : card.type === 'people' ? 'Fictional opted-in attendee' : 'Fictional hosted meetup'}</p>
       <h3 className="detail-subtitle">{card.subtitle}</h3>
       <p className="muted">{card.summary || card.subtitle}</p>
       {card.type === 'research' && <><p className="byline">{card.authors}</p><div className="info-box"><Icon name="clock" /><span>{card.occurrences.length ? `${card.occurrences[0].date} · ${card.occurrences[0].start}–${card.occurrences[0].end} ET (Philadelphia)` : 'Time or room unconfirmed'}</span></div>{card.occurrences.length > 0 && <div className="info-box"><Icon name="pin" /><span>{card.occurrences[0].room} · illustrative session only</span></div>}<p className="fine">No author attendance is implied. Paper, authors, and schedule in this local prototype are unverified fixtures.</p></>}
-      {card.type === 'people' && <><div className="offer-grid"><div><span className="eyebrow">CAN HELP WITH</span><p>{card.offers}</p></div><div><span className="eyebrow">WANTS TO LEARN</span><p>{card.asks}</p></div></div><p className="fine">{card.evidence.join(' · ')}</p>{liked && <><label className="field">{matched ? 'Your intro. Make it sound like you.' : 'Your private draft (not sent)'}<textarea rows="5" value={introFor(state, actor, card)} onChange={(event) => commit({ ...state, drafts: { ...state.drafts, [actionKey(actor, 'people', card.id)]: event.target.value } })} /></label>{matched ? <button className="button primary" onClick={() => copyIntro(card)}><Icon name="copy" /> Copy intro</button> : <p className="info-box">Interest stays private until you both like each other. Switch demo identity to try reciprocating.</p>}</>}<p className="fine">No contact link has been supplied. No message is sent by this demo.</p></>}
+      {card.type === 'people' && <><div className="offer-grid"><div><span className="eyebrow">CAN HELP WITH</span><p>{card.offers}</p></div><div><span className="eyebrow">WANTS TO LEARN</span><p>{card.asks}</p></div></div><p className="fine">{card.evidence.join(' · ')}</p>{matched ? <button className="button primary full" onClick={() => setModal({ kind: 'chat', card })}><Icon name="chat" /> Open chat with {first}</button> : incoming ? <><p className="info-box"><Icon name="bell" />{first} sent you a chat request.</p><div className="request-actions"><button className="button pass-button" onClick={() => answer(card, 'rejected')}><Icon name="close" />Decline</button><button className="button primary" onClick={() => answer(card, 'accepted')}><Icon name="check" />Accept</button></div></> : liked && <><p className="info-box"><Icon name={status === 'not_accepted' ? 'close' : 'clock'} />{status === 'not_accepted' ? `${first} didn't accept this request.` : `Request sent. Waiting for ${first} to accept.`}</p><label className="field">Your first message (prefills the chat)<textarea rows="4" value={introFor(state, actor, card)} onChange={(event) => commit({ ...state, drafts: { ...state.drafts, [actionKey(actor, 'people', card.id)]: event.target.value } })} /></label></>}<p className="fine">{first} sees your name and profile with the request. Messages stay in this browser in the local demo.</p></>}
       {card.type === 'groups' && <><div className="info-box"><Icon name="clock" />March 1, 2025 · {card.time} ET (Philadelphia)</div><div className="info-box"><Icon name="pin" />{card.place || 'Meeting point unconfirmed'}</div><p className="muted">Hosted by {card.host} · {card.audience}<br />{card.style}</p><button className="button primary full" disabled={!card.place || state.joins[actionKey(actor, 'groups', card.id)]} onClick={() => joinGroup(card)}>{state.joins[actionKey(actor, 'groups', card.id)] ? 'Joined meetup' : card.place ? 'Join meetup' : 'Waiting for a meeting point'}<Icon name="check" /></button></>}
       {card.type === 'research' && liked && card.format === 'Poster' && <button className="button primary full" onClick={() => shareBuddy(card)}>Open to a buddy for this poster <Icon name="people" /></button>}
-      {!liked && card.type !== 'groups' && <button className="button primary full" onClick={() => { act('right', card); if (card.type !== 'people' || !isMatched(swipe(state, actor, card, 'right'), actor, card.id)) setModal(null); }}>{card.type === 'people' ? 'Express interest privately' : 'Save research'}<Icon name="heart" /></button>}
+      {!liked && card.type !== 'groups' && <button className="button primary full" onClick={() => { act('right', card); if (card.type !== 'people' || !isMatched(swipe(state, actor, card, 'right'), actor, card.id)) setModal(null); }}>{card.type === 'people' ? 'Send chat request' : 'Save research'}<Icon name="heart" /></button>}
     </>;
   }
 
@@ -229,20 +263,20 @@ function App() {
       <div className="event-badge"><span className="live-dot" /> AAAI-25 replay <span className="city">Philadelphia, PA</span></div>
       <span className="nav-label">MAKE A CONNECTION</span>
       <nav className="main-nav" aria-label="Main navigation">
-        {[['discover', 'discover', 'Discover'], ['saved', 'saved', 'Saved'], ['matches', 'people', 'Matches']].map(([id, icon, label]) => <button key={id} className={view === id ? 'nav-item active' : 'nav-item'} onClick={() => setView(id)}><Icon name={icon} /><span>{label}</span>{id !== 'discover' && <span className="nav-count">{id === 'saved' ? saved.length : matches.length}</span>}</button>)}
+        {[['discover', 'discover', 'Discover'], ['saved', 'saved', 'Saved'], ['matches', 'chat', 'Chats']].map(([id, icon, label]) => <button key={id} className={view === id ? 'nav-item active' : 'nav-item'} onClick={() => setView(id)}><Icon name={icon} /><span>{label}</span>{id !== 'discover' && <span className="nav-count">{id === 'saved' ? saved.length : matches.length}</span>}</button>)}
       </nav>
       <div className="sidebar-note"><span className="little-flower">✳</span><h3>Your next great idea<br />might be a hello away.</h3><p>Stay curious. Be kind.<br />Find your kind of people.</p></div>
       <div className="sidebar-bottom"><button className="profile-link" onClick={() => setModal({ kind: 'profile' })}><Avatar person={identity} small /><span><strong>{identity.name}</strong><small>Edit interests & preferences</small></span><Icon name="settings" size={17} /></button><span className="fine">Made for conversations, not connections counts.</span></div>
     </aside>
 
     <div className="workspace">
-      <header className="topbar"><span><span className="tiny-flower">✳</span> A little curiosity goes a long way.</span><div className="topbar-actions"><button className="icon-button" aria-label="Edit interests and preferences" onClick={() => setModal({ kind: 'profile' })}><Icon name="settings" size={17} /></button><label className="identity-picker"><span>Demo as</span><select aria-label="Demo identity" value={actor} onChange={(event) => switchActor(event.target.value)}>{identities.map((person) => <option value={person.id} key={person.id}>{person.name.split(' ')[0]}</option>)}</select></label></div></header>
-      <div className="demo-banner"><span className="demo-pill">LOCAL DEMO</span><span>Fictional data. Historical replay. Nothing is sent to anyone.</span></div>
+      <header className="topbar"><span><span className="tiny-flower">✳</span> A little curiosity goes a long way.</span><div className="topbar-actions"><button className="icon-button notify-button" aria-label={`Chat requests${requests.length ? `, ${requests.length} new` : ''}`} onClick={() => setModal({ kind: 'requests' })}><Icon name="bell" size={17} />{requests.length > 0 && <span className="notify-badge">{requests.length}</span>}</button><button className="icon-button" aria-label="Edit interests and preferences" onClick={() => setModal({ kind: 'profile' })}><Icon name="settings" size={17} /></button><label className="identity-picker"><span>Demo as</span><select aria-label="Demo identity" value={actor} onChange={(event) => switchActor(event.target.value)}>{identities.map((person) => <option value={person.id} key={person.id}>{person.name.split(' ')[0]}</option>)}</select></label></div></header>
+      <div className="demo-banner"><span className="demo-pill">LOCAL DEMO</span><span>Fictional data. Historical replay. Chats stay in this browser.</span></div>
       {error && <div className="error-banner" role="alert">{error}<button onClick={() => setModal({ kind: 'reset' })}>Reset local data</button></div>}
 
       <div className="content-grid">
         <main id="main-content">
-          <div className="page-heading"><p className="eyebrow">{view === 'discover' ? 'LESS SCROLLING. MORE SERENDIPITY.' : 'GOOD THINGS, KEPT CLOSE.'}</p><h1>{view === 'discover' ? <>Good research.<br /><span>Better company.</span></> : view === 'saved' ? <>Your little<br /><span>collection of possibility.</span></> : <>A shared interest.<br /><span>A real starting point.</span></>}</h1><p className="page-subtitle">{view === 'discover' ? 'Find an idea you love. Meet someone who gets it.' : view === 'saved' ? 'The ideas, people, and meetups you want to come back to.' : 'A match only appears when you both choose to connect.'}</p></div>
+          <div className="page-heading"><p className="eyebrow">{view === 'discover' ? 'LESS SCROLLING. MORE SERENDIPITY.' : 'GOOD THINGS, KEPT CLOSE.'}</p><h1>{view === 'discover' ? <>Good research.<br /><span>Better company.</span></> : view === 'saved' ? <>Your little<br /><span>collection of possibility.</span></> : <>A shared interest.<br /><span>A real starting point.</span></>}</h1><p className="page-subtitle">{view === 'discover' ? 'Find an idea you love. Meet someone who gets it.' : view === 'saved' ? 'The ideas, people, and meetups you want to come back to.' : 'A chat opens when someone accepts your request.'}</p></div>
 
           {view === 'discover' ? <>
             <div className="deck-tabs" role="tablist" aria-label="Discovery deck" onKeyDown={(event) => {
@@ -290,9 +324,9 @@ function App() {
             <div className="swipe-actions"><button className="undo-button icon-button" disabled={!lastAction || lastAction.actor !== actor || !!error} onClick={undo} aria-label="Undo last swipe"><Icon name="undo" size={20} /></button><button className="button pass-button" disabled={!current || !!error} onClick={() => act('left')}><Icon name="close" />Pass<span className="key-hint">←</span></button><button className="button save-button" disabled={!current || !!error} onClick={() => act('right')}><Icon name={deck === 'people' ? 'heart' : 'saved'} />{deck === 'people' ? 'Interested' : 'Save'}<span className="key-hint">→</span></button></div>
             <p className="gesture-hint">Swipe a card or use <kbd>←</kbd> <kbd>→</kbd> to explore. No pressure, ever.</p>
           </> : <div className="saved-content">
-            {(view === 'matches' ? matches : saved).length === 0 && <div className="empty-state"><span className="empty-icon"><Icon name={view === 'matches' ? 'people' : 'saved'} size={30} /></span><h2>{view === 'matches' ? 'Good conversations take two.' : 'Start a collection of good ideas.'}</h2><p>{view === 'matches' ? 'Like someone in People, switch the demo identity, and like them back. No one-sided like appears as a match.' : 'Save a paper or a group as you explore. Mutual people matches appear here too.'}</p><button className="button primary" onClick={() => { setView('discover'); if (view === 'matches') setDeck('people'); }}>Keep exploring <Icon name="arrow" /></button></div>}
-            {(view === 'matches' ? matches : saved).map((card) => <article className="saved-card" key={`${card.type}-${card.id}`}><span className={`saved-icon ${card.color || 'mint'}`}><Icon name={card.type} size={23} /></span><div><span className="eyebrow">{card.type === 'people' ? 'MUTUAL MATCH' : card.type === 'research' ? `${card.format} · FICTIONAL` : state.joins[actionKey(actor, 'groups', card.id)] ? 'MEETUP · JOINED' : 'MEETUP · SAVED, NOT JOINED'}</span><h3>{card.title}</h3><p>{card.subtitle}</p>{card.type === 'research' && card.format === 'Poster' && <button className="text-button buddy-link" onClick={() => shareBuddy(card)}><Icon name="people" size={16} />{state.buddies[actionKey(actor, 'research', card.id)] ? 'Buddy interest shared · find people' : 'Open to a buddy for this poster'}</button>}</div><button className="icon-button" aria-label={`Open ${card.title}`} onClick={() => setModal({ kind: card.type === 'people' ? 'match' : 'detail', card })}><Icon name="arrow" /></button></article>)}
-            {view === 'matches' && pending.length > 0 && <div className="pending-section"><h3>Your private interests <span className="count-pill">{pending.length}</span></h3><p className="fine">Only your own outgoing likes are shown here. Waiting for reciprocal interest.</p>{pending.map((card) => <button className="pending-person" key={card.id} onClick={() => setModal({ kind: 'detail', card })}><Avatar person={card} small /><span>{card.title}<small>Private intro draft · not a match</small></span><Icon name="arrow" size={17} /></button>)}</div>}
+            {(view === 'matches' ? matches : saved).length === 0 && <div className="empty-state"><span className="empty-icon"><Icon name={view === 'matches' ? 'people' : 'saved'} size={30} /></span><h2>{view === 'matches' ? 'Good conversations take two.' : 'Start a collection of good ideas.'}</h2><p>{view === 'matches' ? 'Tap Interested on someone in People. They get a request, and your chat opens when they accept. Switch the demo identity to try both sides.' : 'Save a paper or a group as you explore. Accepted chats appear here too.'}</p><button className="button primary" onClick={() => { setView('discover'); if (view === 'matches') setDeck('people'); }}>Keep exploring <Icon name="arrow" /></button></div>}
+            {(view === 'matches' ? matches : saved).map((card) => <article className="saved-card" key={`${card.type}-${card.id}`}><span className={`saved-icon ${card.color || 'mint'}`}><Icon name={card.type} size={23} /></span><div><span className="eyebrow">{card.type === 'people' ? `CONNECTED · ${conversation(state, actor, card.id).length} ${conversation(state, actor, card.id).length === 1 ? 'MESSAGE' : 'MESSAGES'}` : card.type === 'research' ? `${card.format} · FICTIONAL` : state.joins[actionKey(actor, 'groups', card.id)] ? 'MEETUP · JOINED' : 'MEETUP · SAVED, NOT JOINED'}</span><h3>{card.title}</h3><p>{card.subtitle}</p>{card.type === 'research' && card.format === 'Poster' && <button className="text-button buddy-link" onClick={() => shareBuddy(card)}><Icon name="people" size={16} />{state.buddies[actionKey(actor, 'research', card.id)] ? 'Buddy interest shared · find people' : 'Open to a buddy for this poster'}</button>}</div><button className="icon-button" aria-label={`Open ${card.title}`} onClick={() => setModal({ kind: card.type === 'people' ? 'chat' : 'detail', card })}><Icon name={card.type === 'people' ? 'chat' : 'arrow'} /></button></article>)}
+            {view === 'matches' && pending.length > 0 && <div className="pending-section"><h3>Requests you sent <span className="count-pill">{pending.length}</span></h3><p className="fine">They can accept or decline. A chat opens on acceptance.</p>{pending.map((card) => <button className="pending-person" key={card.id} onClick={() => setModal({ kind: 'detail', card })}><Avatar person={card} small /><span>{card.title}<small>{requestStatus(state, actor, card.id) === 'not_accepted' ? 'Not accepted' : 'Waiting for a response'}</small></span><Icon name="arrow" size={17} /></button>)}</div>}
           </div>}
           <footer className="main-footer"><span>AAAI-25 replay · March 1, 2025 · 12:00 PM ET · version {__APP_VERSION__}</span><button onClick={() => setModal({ kind: 'reset' })}>Reset demo</button></footer>
         </main>
@@ -310,7 +344,9 @@ function App() {
     <div className="toast-region" role="status" aria-live="polite">{notice && <div className="toast"><Icon name="check" size={18} />{notice}</div>}</div>
     {modal?.kind === 'profile' && <Modal title="Make this conference yours." onClose={() => setModal(null)} wide><ProfileForm key={actor} profile={profile} onSave={(values) => { if (commit({ ...state, profiles: { ...state.profiles, [actor]: values } })) { setModal(null); setNotice('Discovery updated. Your interests and preferences are saved.'); } }} /></Modal>}
     {(modal?.kind === 'detail' || modal?.kind === 'match') && <Modal title={modal.kind === 'match' && modalMatched ? 'A little mutual curiosity.' : modal.card.title} onClose={() => setModal(null)}>{modal.kind === 'match' && modalMatched && <div className="match-celebration"><Avatar person={identity} /><span><Icon name="heart" size={26} /></span><Avatar person={modal.card} /><p>You and {modal.card.title.split(' ')[0]} both chose to connect.</p></div>}{detailBody(modal.card)}</Modal>}
-    {modal?.kind === 'reset' && <Modal title="A fresh start?" onClose={() => setModal(null)}><p className="muted">This clears both demo identities, saved items, passes, matches, and introductions in this browser. Nothing on a server is changed.</p><button className="button primary full" onClick={() => {
+    {modal?.kind === 'requests' && <Modal title="Chat requests" onClose={() => setModal(null)}>{requests.length === 0 ? <p className="muted">No new requests. When someone taps Interested on you, it shows up here.</p> : requests.map((card) => <div className="request-row" key={card.id}><Avatar person={card} small /><div><strong>{card.title}</strong><small>{card.stage} · offers {card.offers.toLowerCase()}</small>{conversation(state, actor, card.id)[0]?.from === card.id && <p className="request-note">“{conversation(state, actor, card.id)[0].body}”</p>}</div><div className="request-actions"><button className="button pass-button" onClick={() => answer(card, 'rejected')}>Decline</button><button className="button primary" onClick={() => answer(card, 'accepted')}>Accept</button></div></div>)}<p className="fine">Declining is private: the sender only sees that the request wasn't accepted.</p></Modal>}
+    {modal?.kind === 'chat' && <Modal title={`Chat with ${modal.card.title.split(' ')[0]}`} onClose={() => setModal(null)}>{isMatched(state, actor, modal.card.id) ? <ChatWindow key={`${actor}-${modal.card.id}`} me={actor} other={modal.card} thread={conversation(state, actor, modal.card.id)} draft={introFor(state, actor, modal.card)} onSend={(text) => send(modal.card, text)} /> : <p className="muted">This chat isn't open. It opens once a request is accepted.</p>}</Modal>}
+    {modal?.kind === 'reset' && <Modal title="A fresh start?" onClose={() => setModal(null)}><p className="muted">This clears every demo identity's saved items, passes, requests, chats, and introductions in this browser. Nothing on a server is changed.</p><button className="button primary full" onClick={() => {
       try { localStorage.removeItem(STORAGE_KEY); setState(freshState()); setError(''); setLastAction(null); setPaperId(null); setModal(null); setView('discover'); setNotice('Local demo reset. A fresh set of possibilities.'); }
       catch (failure) { setError(`Cannot reset browser storage: ${failure.message}`); }
     }}>Reset local demo</button></Modal>}

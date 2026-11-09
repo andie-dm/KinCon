@@ -133,6 +133,17 @@ function apiRoutes(svc, es, tokens, actorOf) {
       send(res, 200, await svc.editOpener(actorOf(req), decodeURIComponent(m[1]), body.opener));
     }],
     ['GET', /^\/api\/me\/saved$/, async (req, res) => send(res, 200, await svc.saved(actorOf(req)))],
+    // Chat requests: "Interested" on a person notifies them; they accept or decline.
+    ['GET', /^\/api\/me\/notifications$/, async (req, res) => send(res, 200, await svc.notifications(actorOf(req)))],
+    ['PUT', /^\/api\/requests\/([^/]+)$/, async (req, res, m) => {
+      const body = await readJson(req);
+      send(res, 200, await svc.respondTo(actorOf(req), decodeURIComponent(m[1]), body.decision));
+    }],
+    ['GET', /^\/api\/chats\/([^/]+)\/messages$/, async (req, res, m) => send(res, 200, await svc.listMessages(actorOf(req), decodeURIComponent(m[1])))],
+    ['POST', /^\/api\/chats\/([^/]+)\/messages$/, async (req, res, m) => {
+      const body = await readJson(req);
+      send(res, 201, await svc.postMessage(actorOf(req), decodeURIComponent(m[1]), body.body, body.clientMessageId));
+    }],
   ];
 }
 

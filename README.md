@@ -101,7 +101,9 @@ Demo sessions: with `DEMO_SESSION_TOKENS=riley=<token>,jules=<token>` set (Secre
 - `PUT /api/papers/{id}/buddy` explicitly shares interest in a saved poster.
 - `PUT /api/groups/{id}/join` joins a hosted meetup (saving a group does not join it).
 - `PUT /api/matches/{profileId}/opener` edits the private intro draft.
-- `GET /api/me/saved` returns saved papers, saved/joined groups and reciprocal matches.
+- `GET /api/me/saved` returns saved papers, saved/joined groups and connected people.
+- "Interested" on a person is a visible chat request. `GET /api/me/notifications` lists incoming requests; `PUT /api/requests/{senderId}` with `{"decision":"accepted"|"rejected"}` answers one.
+- `GET` / `POST /api/chats/{profileId}/messages` (`{"body":"...","clientMessageId":"optional"}`) reads and sends messages, for connected pairs only.
 
 Papers and schedules are the verified AAAI-25 import; people, groups and their actions are fictional demo fixtures.
 

@@ -30,7 +30,7 @@ python3 -m pytest tests                     # unit tests; live tests run when EL
 (cd app && node --test test/)               # ranking unit tests + live API tests
 ```
 
-To rehearse the reciprocal demo again, run `python3 scripts/seed_social_fixtures.py --reset-demo-actions`. It deletes only the actions of the two fictional demo identities (Riley, Jules) and restores their profiles from the fixtures.
+To rehearse the request-and-chat demo again, run `python3 scripts/seed_social_fixtures.py --reset-demo-actions`. It deletes only the actions of the two fictional demo identities (Riley, Jules) and restores their profiles from the fixtures.
 
 **Local Elasticsearch used for this build:** a single-node `docker.elastic.co/elasticsearch/elasticsearch:9.1.0` container with a self-generated **trial** license (`semantic_text`, the RRF retriever and ML inference all need one) and security disabled, bound to 127.0.0.1:9200:
 
@@ -73,7 +73,7 @@ Mappings live in `scripts/confdata/mappings.py`, all with `dynamic: strict`. `se
 | Index | Notes |
 |---|---|
 | `conference-papers-2025-v1` | `authors` and `occurrences` are `nested`. `research_text` (title + abstract) is `semantic_text`. `occurrences` are owned by `import_schedules.py` and the importer never touches them |
-| `conference-people-v1` | `expertise_text` = name + offers + research interests + bio + evidence titles. It **excludes** asks, contact links, actions and drafts. `public_links` has `enabled: false` (not searchable) and appears only in reciprocal matches. `evidence.kind` ∈ `verified_authorship`, `participant_confirmed_link`, `public_contextual_reference`, `self_declared` (fixtures use only the last two) |
+| `conference-people-v1` | `expertise_text` = name + offers + research interests + bio + evidence titles. It **excludes** asks, contact links, actions and drafts. `public_links` has `enabled: false` (not searchable) and appears only to connected pairs. `evidence.kind` ∈ `verified_authorship`, `participant_confirmed_link`, `public_contextual_reference`, `self_declared` (fixtures use only the last two) |
 | `conference-groups-v1` | No membership array. Joins are actions. `about` = title, topic, purpose, conversation style, audience |
 | `conference-actions-v1` | One document per (event, actor, kind, target). `opener` is stored with `index: false` |
 | `conference-events-v1` | Demo clock `2025-03-01T12:00:00-05:00` (historical replay time), kept separate from real `created_at` / `updated_at` write times. Holds the 20-tag vocabulary, sourced meeting points and source references |
@@ -112,14 +112,16 @@ Retrieval uses the `rrf` retriever (`rank_window_size` 50, `rank_constant` 60) o
 | Swipe idempotency | Painless `_update`: same direction → `noop`, so `effective_at`, `revision` and the tag snapshot don't move. Affinity and recency count it once |
 | Changed swipe | Direction flips: `revision+1`, `effective_at` advances, tag snapshot refreshed. A flip to left clears the private opener |
 | Near-real-time | Action writes use `refresh=wait_for`, so an immediate reload sees the swipe. Reciprocity uses real-time `GET` of the reverse action's deterministic ID |
-| Privacy | A one-sided like is visible only to its author's backend. `matched` is true only when both rights exist in the same event. Responses are allowlisted card objects (`app/lib/cards.js`) |
+| Chat requests | **Interested on a person is a visible chat request** (team decision, replacing the earlier private-until-reciprocal like). The recipient sees the sender's public card in `GET /api/me/notifications` and answers with `PUT /api/requests/{senderId} {"decision":"accepted"\|"rejected"}`. The answer is a `respond` action with a deterministic ID; the first answer is final. Two people who are both interested are connected without an answer. A declined sender only sees `not_accepted`, never a reason. The private opener draft stays private |
+| Chat | Only connected pairs can read or post (`GET`/`POST /api/chats/{profileId}/messages`); anyone else gets the same 403, so it never reveals whether a request exists. Messages live in `conference-messages-v1` (body `index: false`, never in a semantic field), one conversation per pair (`conv_` + sha256 of event + sorted ids). A `clientMessageId` makes a retried send a no-op. Writes use `refresh=wait_for`; the UI polls |
+| Privacy | Responses are allowlisted card objects (`app/lib/cards.js`); contact links appear only to connected pairs |
 | Saved / joined | Saved papers and groups = right swipes. Joined = `join` actions. Saving a group never joins it |
 | Poster buddy | `PUT /api/papers/{id}/buddy` requires a prior save and a verified poster occurrence. It writes a `buddy` action and adds the paper to `shared_poster_interests`, which only this action populates. The People feed with `paperId` requires the viewer's own buddy opt-in, the same occurrence and an overlapping declared availability window (or none declared) |
 | Eligibility | People: event, `discovery_opt_in`, `availability_status=available`, not self, not swiped. Groups: event, scheduled, not past the demo clock, not hosted by self, host stage restriction only when `audience_specified`. Research: `conference_id`, `main_track=true`, format/time/room in one nested clause, not swiped |
 
 ## API (see PLAN.md for the agreed contract)
 
-`POST /api/demo/session {"identity":"riley"|"jules"}` · `GET/PUT /api/me` · `GET /api/feed?deck=research|people|groups[&paperId][&format=oral|poster][&from&to&room]` · `PUT /api/swipes/{paper|person|group}/{id} {"direction":"left|right"}` · `PUT /api/papers/{id}/buddy` · `PUT /api/groups/{id}/join` · `PUT /api/matches/{profileId}/opener` · `GET /api/me/saved` · `GET /api/event` · `GET /api/health` (Elasticsearch status; `/healthz` and `/readyz` stay local so an ES outage never takes the UI out of the Service)
+`POST /api/demo/session {"identity":"riley"|"jules"}` · `GET/PUT /api/me` · `GET /api/feed?deck=research|people|groups[&paperId][&format=oral|poster][&from&to&room]` · `PUT /api/swipes/{paper|person|group}/{id} {"direction":"left|right"}` · `PUT /api/papers/{id}/buddy` · `PUT /api/groups/{id}/join` · `PUT /api/matches/{profileId}/opener` · `GET /api/me/saved` · `GET /api/me/notifications` · `PUT /api/requests/{senderId}` · `GET`/`POST /api/chats/{profileId}/messages` · `GET /api/event` · `GET /api/health` (Elasticsearch status; `/healthz` and `/readyz` stay local so an ES outage never takes the UI out of the Service)
 
 ## Example queries
 

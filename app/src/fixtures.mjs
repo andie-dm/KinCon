@@ -7,11 +7,6 @@ export const intents = [
 
 export const preferences = ['Peers at my stage', 'Open to mentoring', 'Any stage'];
 
-export const identities = [
-  { id: 'alex', name: 'Alex Morgan', stage: 'Graduate researcher', initials: 'AM' },
-  { id: 'jules', name: 'Jules Chen', stage: 'Graduate researcher', initials: 'JC' },
-];
-
 export const defaultProfile = {
   intent: intents[0],
   offers: 'Imitation learning, Python',
@@ -63,6 +58,20 @@ const groups = [
   { id: 'first-timers', title: 'First conference? Same here.', subtitle: 'Coffee with fellow newcomers', host: 'Sam Okafor', audience: 'Newcomers at any stage', style: 'Friendly, informal chat', tags: ['Open source', 'Human-AI interaction'], time: '3:00 PM', place: 'Public lobby coffee stand', size: 4, capacity: 6, color: 'peach', summary: 'A small fictional meetup for comparing notes, sharing a favorite talk, and making the next conference day feel a little less overwhelming.' },
   { id: 'cross-field', title: 'Your field meets mine.', subtitle: 'An interdisciplinary idea swap', host: 'Nia Williams', audience: 'All stages welcome', style: 'One idea each, plenty of listening', tags: ['Climate AI', 'Efficient learning'], time: '4:00 PM', place: null, size: 2, capacity: 5, color: 'lilac', summary: 'Bring one useful idea from your field and one problem you cannot stop thinking about. The host has not confirmed a public meeting point yet.' },
 ].map((group) => ({ ...group, type: 'groups', evidence: ['Fictional host-created meetup'], occurrences: [] }));
+
+// Every fictional attendee is a playable demo identity, so whoever receives a
+// chat request can be switched to and answer it. Alex and Jules come first.
+const rank = (id) => (id === 'alex' ? 0 : id === 'jules' ? 1 : 2);
+const playable = [...people].sort((a, b) => rank(a.id) - rank(b.id));
+export const identities = playable.map(({ id, title, stage, initials, color }) => ({ id, name: title, stage, initials, color }));
+
+// Alex and Jules keep the shared demo profile; everyone else starts from what
+// their card says they offer and want to learn.
+export function profileFor(id) {
+  if (id === 'alex' || id === 'jules') return { ...defaultProfile };
+  const person = people.find((p) => p.id === id);
+  return { intent: intents[1], offers: person.offers, asks: person.asks, preference: preferences[2] };
+}
 
 export const cards = [...research, ...people, ...groups];
 export const findCard = (type, id) => cards.find((card) => card.type === type && card.id === id);

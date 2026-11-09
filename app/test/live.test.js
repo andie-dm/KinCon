@@ -117,21 +117,38 @@ test.describe('live API against Elasticsearch', opts, () => {
     assert.ok(!buddies.body.cards.some((c) => c.id.endsWith('.tomas')), 'unavailable attendee excluded');
   });
 
-  // 11 + 12: one-sided interest is private; reciprocity unlocks exactly this pair.
-  test('one-sided like stays private; reciprocity unlocks the two profiles', async () => {
+  // Interested = a visible chat request: the recipient is notified, accepts, and they can chat.
+  test('interest notifies the recipient; accepting opens a private two-person chat', async () => {
     const like = await riley('PUT', `/api/swipes/person/${encodeURIComponent(JULES)}`, { direction: 'right', paperId: FLOWPOLICY });
     assert.equal(like.status, 200);
     assert.equal(like.body.matched, false);
+    assert.equal(like.body.request_status, 'pending');
     for (const k of PRIVATE_KEYS) assert.ok(!keysDeep(like.body).has(k), `swipe response leaks ${k}`);
 
-    const jSaved = await jules('GET', '/api/me/saved');
-    assert.equal(jSaved.body.matches.length, 0);
-    const jPeople = await jules('GET', '/api/feed?deck=people');
-    for (const k of PRIVATE_KEYS) assert.ok(!keysDeep(jPeople.body).has(k), `feed leaks ${k}`);
-    assert.ok(!JSON.stringify(jPeople.body).includes('liked'), 'no hint of the pending like');
+    // Jules is notified with Riley's public card; the private opener draft is not exposed.
+    const note = await jules('GET', '/api/me/notifications');
+    assert.equal(note.status, 200);
+    assert.deepEqual(note.body.requests.map((r) => r.id), [RILEY]);
+    for (const k of PRIVATE_KEYS) assert.ok(!keysDeep(note.body).has(k), `notifications leak ${k}`);
+    // Riley's own notifications do not echo the outgoing request.
+    assert.ok(!(await riley('GET', '/api/me/notifications')).body.requests.some((r) => r.id === JULES));
+    assert.equal((await jules('GET', '/api/me/saved')).body.matches.length, 0);
 
-    const back = await jules('PUT', `/api/swipes/person/${encodeURIComponent(RILEY)}`, { direction: 'right' });
-    assert.equal(back.body.matched, true);
+    // No chat before acceptance, for either side.
+    assert.equal((await riley('POST', `/api/chats/${encodeURIComponent(JULES)}/messages`, { body: 'hi' })).status, 403);
+    assert.equal((await jules('GET', `/api/chats/${encodeURIComponent(RILEY)}/messages`)).status, 403);
+
+    const accept = await jules('PUT', `/api/requests/${encodeURIComponent(RILEY)}`, { decision: 'accepted' });
+    assert.equal(accept.status, 200);
+    assert.equal(accept.body.connected, true);
+    assert.equal(accept.body.effect, 'created');
+    // The first answer is final: a later decline is a no-op.
+    const flip = await jules('PUT', `/api/requests/${encodeURIComponent(RILEY)}`, { decision: 'rejected' });
+    assert.equal(flip.body.effect, 'noop');
+    assert.equal(flip.body.connected, true);
+    assert.equal((await jules('GET', '/api/me/notifications')).body.requests.length, 0);
+    assert.deepEqual((await riley('GET', '/api/me/notifications')).body.accepted.map((a) => a.id), [JULES]);
+
     const rSaved = await riley('GET', '/api/me/saved');
     assert.deepEqual(rSaved.body.matches.map((m) => m.id), [JULES]);
     const m = rSaved.body.matches[0];
@@ -139,17 +156,42 @@ test.describe('live API against Elasticsearch', opts, () => {
     assert.equal(m.meetup_suggestion.kind, 'shared_poster');
     assert.equal(m.meetup_suggestion.label, 'Poster scheduled in Exhibit Hall E');
     assert.ok(m.contact_links.length === 1);
-    const jSaved2 = await jules('GET', '/api/me/saved');
-    assert.deepEqual(jSaved2.body.matches.map((x) => x.id), [RILEY]);
-    // Seeded one-sided Marcus -> Helena is not a match for anyone involved.
-    assert.equal(await (async () => {
-      const a = await es.get(INDEX.actions, actionId(EVENT_ID, `${EVENT_ID}.helena`, 'swipe', 'person', `${EVENT_ID}.marcus`));
-      return a;
-    })(), null);
+    assert.deepEqual((await jules('GET', '/api/me/saved')).body.matches.map((x) => x.id), [RILEY]);
+
+    // Chat both ways; a retried send with the same client id stores one message.
+    const sent = await riley('POST', `/api/chats/${encodeURIComponent(JULES)}/messages`, { body: '  See you at board 746?  ', clientMessageId: 'r-1' });
+    assert.equal(sent.status, 201);
+    assert.equal(sent.body.effect, 'created');
+    assert.equal(sent.body.body, 'See you at board 746?');
+    assert.equal((await riley('POST', `/api/chats/${encodeURIComponent(JULES)}/messages`, { body: 'See you at board 746?', clientMessageId: 'r-1' })).body.effect, 'noop');
+    await jules('POST', `/api/chats/${encodeURIComponent(RILEY)}/messages`, { body: 'Yes! 12:30 at Exhibit Hall E.' });
+    const thread = await jules('GET', `/api/chats/${encodeURIComponent(RILEY)}/messages`);
+    assert.deepEqual(thread.body.messages.map((x) => [x.from, x.body]), [['them', 'See you at board 746?'], ['me', 'Yes! 12:30 at Exhibit Hall E.']]);
+    assert.equal(thread.body.conversation_id, m.conversation_id);
+    assert.equal((await riley('POST', `/api/chats/${encodeURIComponent(JULES)}/messages`, { body: '   ' })).status, 400);
+    assert.equal((await riley('POST', `/api/chats/${encodeURIComponent(JULES)}/messages`, { body: 'x'.repeat(1001) })).status, 400);
 
     const edit = await riley('PUT', `/api/matches/${encodeURIComponent(JULES)}/opener`, { opener: 'Hey Jules, see you at board 746?' });
     assert.equal(edit.status, 200);
     assert.equal((await riley('GET', '/api/me/saved')).body.matches[0].opener, 'Hey Jules, see you at board 746?');
+  });
+
+  test('a declined request closes the chat and reveals no reason', async () => {
+    const SAM = `${EVENT_ID}.sam`;
+    // Seeded: Sam is interested in Riley.
+    const note = await riley('GET', '/api/me/notifications');
+    assert.ok(note.body.requests.some((r) => r.id === SAM), 'Sam request is pending for Riley');
+    const no = await riley('PUT', `/api/requests/${encodeURIComponent(SAM)}`, { decision: 'rejected' });
+    assert.equal(no.status, 200);
+    assert.equal(no.body.connected, false);
+    assert.ok(!(await riley('GET', '/api/me/notifications')).body.requests.some((r) => r.id === SAM));
+    const doc = await es.get(INDEX.actions, actionId(EVENT_ID, RILEY, 'respond', 'person', SAM));
+    assert.equal(doc._source.response, 'rejected');
+    // Same 403 as for someone who never asked: no reason and no existence signal.
+    assert.equal((await riley('GET', `/api/chats/${encodeURIComponent(SAM)}/messages`)).status, 403);
+    assert.equal((await riley('GET', `/api/chats/${encodeURIComponent(`${EVENT_ID}.helena`)}/messages`)).status, 403);
+    assert.equal((await riley('PUT', `/api/requests/${encodeURIComponent(`${EVENT_ID}.helena`)}`, { decision: 'accepted' })).status, 404);
+    assert.equal((await riley('PUT', `/api/requests/${encodeURIComponent(SAM)}`, { decision: 'maybe' })).status, 400);
   });
 
   // 14: authors without an opted-in event profile never become People cards.

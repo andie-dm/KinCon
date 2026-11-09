@@ -1,7 +1,9 @@
 'use strict';
 // Feed retrieval, idempotent social actions and derived saved/match state.
 // The actor is always the session's profile id; it is never read from input.
-const { EVENT_ID, CONFERENCE_ID, INDEX, DECK_TARGET, STAGE_BAND, actionId } = require('./config');
+const { EVENT_ID, CONFERENCE_ID, INDEX, DECK_TARGET, STAGE_BAND, actionId, conversationId, messageId } = require('./config');
+
+const MAX_MESSAGE_LENGTH = 1000;
 const { topicAffinity, rerank, reserveAdjacent } = require('./ranking');
 const cards = require('./cards');
 
@@ -283,19 +285,125 @@ function createService(es) {
         active: true, effective_at: now, revision: 1, created_at: now, updated_at: now, ...upsertExtra },
     }, { refresh: 'wait_for', retry_on_conflict: '3' });
     const out = { target_type: type, target_id: id, direction, effect: r.result, saved: direction === 'right' && type !== 'person' };
-    if (type === 'person') out.matched = direction === 'right' && (await isReciprocal(actor, id));
+    if (type === 'person') {
+      out.matched = direction === 'right' && (await isConnected(actor, id));
+      out.request_status = direction === 'right' ? (await requestStatus(actor, id)) : 'none';
+    }
     return out;
   }
 
-  // Real-time GET of the reverse action by its deterministic ID: never misses a
-  // like written a moment ago, and never exposes it unless both sides liked.
-  async function isReciprocal(a, b) {
-    const [ab, ba] = await Promise.all([
-      es.get(INDEX.actions, actionId(EVENT_ID, a, 'swipe', 'person', b)),
-      es.get(INDEX.actions, actionId(EVENT_ID, b, 'swipe', 'person', a)),
+  // ---------------------------------------------------------------- requests
+  // "Interested" on a person is a visible chat request: the recipient sees it
+  // in /api/me/notifications and accepts or declines. Two people who are both
+  // interested are connected without a separate acceptance. Every read is a
+  // real-time GET by deterministic ID, so a just-written request or answer is
+  // never missed.
+  async function requestStatus(sender, recipient) {
+    const [ask, back, answer] = await Promise.all([
+      es.get(INDEX.actions, actionId(EVENT_ID, sender, 'swipe', 'person', recipient)),
+      es.get(INDEX.actions, actionId(EVENT_ID, recipient, 'swipe', 'person', sender)),
+      es.get(INDEX.actions, actionId(EVENT_ID, recipient, 'respond', 'person', sender)),
     ]);
-    return !!(ab && ba && ab._source.direction === 'right' && ba._source.direction === 'right'
-      && ab._source.event_id === EVENT_ID && ba._source.event_id === EVENT_ID);
+    if (!ask || ask._source.direction !== 'right' || ask._source.event_id !== EVENT_ID) return 'none';
+    if (back && back._source.direction === 'right') return 'accepted';
+    if (answer && answer._source.response === 'accepted') return 'accepted';
+    // The sender only ever learns "not accepted", never a reason.
+    if (answer && answer._source.response === 'rejected') return 'not_accepted';
+    return 'pending';
+  }
+
+  async function isConnected(a, b) {
+    const [ab, ba] = await Promise.all([requestStatus(a, b), requestStatus(b, a)]);
+    return ab === 'accepted' || ba === 'accepted';
+  }
+
+  // Right swipes other attendees made on this actor (server-side read only).
+  async function incomingSwipes(actor) {
+    const r = await es.search(INDEX.actions, {
+      size: 500, sort: [{ effective_at: 'desc' }],
+      _source: ['actor_profile_id', 'effective_at'],
+      query: { bool: { filter: [{ term: { event_id: EVENT_ID } }, { term: { action_kind: 'swipe' } },
+        { term: { target_type: 'person' } }, { term: { target_id: actor } }, { term: { direction: 'right' } }] } },
+    });
+    return r.hits.hits.map((h) => h._source);
+  }
+
+  async function notifications(actor) {
+    const [incoming, mine] = await Promise.all([incomingSwipes(actor), mySwipes(actor, 'person')]);
+    const requests = [];
+    for (const s of incoming) {
+      if (s.actor_profile_id === actor || (await requestStatus(s.actor_profile_id, actor)) !== 'pending') continue;
+      const p = await es.get(INDEX.people, s.actor_profile_id);
+      if (!p || p._source.event_id !== EVENT_ID) continue;
+      requests.push({ ...cards.personCard(p._source, `${p._source.display_name} would like to chat.`, null), requested_at: s.effective_at });
+    }
+    const accepted = [];
+    for (const s of mine.filter((x) => x.direction === 'right')) {
+      if ((await requestStatus(actor, s.target_id)) !== 'accepted') continue;
+      const p = await es.get(INDEX.people, s.target_id);
+      if (p) accepted.push({ id: p._source.profile_id, title: p._source.display_name, conversation_open: true });
+    }
+    return { requests, accepted, unread_requests: requests.length };
+  }
+
+  async function respondTo(actor, senderId, decision) {
+    if (!['accepted', 'rejected'].includes(decision)) throw new HttpError(400, "decision must be 'accepted' or 'rejected'");
+    if (senderId === actor) throw new HttpError(400, 'cannot answer your own request');
+    const status = await requestStatus(senderId, actor);
+    if (status === 'none') throw new HttpError(404, 'no request from this attendee');
+    const id = actionId(EVENT_ID, actor, 'respond', 'person', senderId);
+    const now = new Date().toISOString();
+    // The first answer is final; a retry or a later change is a no-op.
+    const r = await es.update(INDEX.actions, id, {
+      script: { lang: 'painless', source: "ctx.op = 'noop';" },
+      upsert: { action_id: id, event_id: EVENT_ID, actor_profile_id: actor, action_kind: 'respond', target_type: 'person',
+        target_id: senderId, response: decision, active: true, effective_at: now, revision: 1, created_at: now, updated_at: now },
+    }, { refresh: 'wait_for', retry_on_conflict: '3' });
+    const connected = await isConnected(actor, senderId);
+    return { profile_id: senderId, decision: status === 'pending' ? decision : null, connected, effect: r.result };
+  }
+
+  // ---------------------------------------------------------------- chat
+  async function requireConnection(actor, otherId) {
+    if (otherId === actor) throw new HttpError(400, 'cannot chat with yourself');
+    // A non-participant and a pending/declined pair get the same answer, so the
+    // response never reveals whether a request exists.
+    if (!(await isConnected(actor, otherId))) throw new HttpError(403, 'chat opens once a request is accepted');
+    return conversationId(EVENT_ID, actor, otherId);
+  }
+
+  function messageCard(actor, m) {
+    return { id: m.message_id, from: m.sender_profile_id === actor ? 'me' : 'them', sender_profile_id: m.sender_profile_id,
+      body: m.body, created_at: m.created_at };
+  }
+
+  async function listMessages(actor, otherId) {
+    const conv = await requireConnection(actor, otherId);
+    const r = await es.search(INDEX.messages, {
+      size: 500, sort: [{ created_at: 'asc' }, { message_id: 'asc' }],
+      query: { bool: { filter: [{ term: { event_id: EVENT_ID } }, { term: { conversation_id: conv } }] } },
+    });
+    return { conversation_id: conv, with: otherId, messages: r.hits.hits.map((h) => messageCard(actor, h._source)) };
+  }
+
+  async function postMessage(actor, otherId, body, clientMessageId) {
+    const text = typeof body === 'string' ? body.trim() : '';
+    if (!text) throw new HttpError(400, 'message body is required');
+    if (text.length > MAX_MESSAGE_LENGTH) throw new HttpError(400, `messages are limited to ${MAX_MESSAGE_LENGTH} characters`);
+    if (clientMessageId !== undefined && (typeof clientMessageId !== 'string' || !/^[\w-]{1,64}$/.test(clientMessageId))) {
+      throw new HttpError(400, 'clientMessageId must be 1-64 letters, digits, _ or -');
+    }
+    const conv = await requireConnection(actor, otherId);
+    const id = messageId(conv, actor, clientMessageId);
+    const doc = { message_id: id, event_id: EVENT_ID, conversation_id: conv, sender_profile_id: actor, recipient_profile_id: otherId,
+      body: text, client_message_id: clientMessageId || null, created_at: new Date().toISOString() };
+    // `create` with a client id makes a retried send a no-op instead of a duplicate.
+    const r = await es.request('PUT', `/${INDEX.messages}/_create/${encodeURIComponent(id)}`, doc, { ok: [200, 201, 409], query: { refresh: 'wait_for' } });
+    if (r.status === 409 || (r.error && r.error.type === 'version_conflict_engine_exception')) {
+      const existing = await es.get(INDEX.messages, id);
+      return { ...messageCard(actor, existing._source), effect: 'noop' };
+    }
+    return { ...messageCard(actor, doc), effect: 'created' };
   }
 
   async function buddy(actor, paperId, occurrenceId) {
@@ -350,16 +458,19 @@ function createService(es) {
     const research = pd.docs.filter((d) => d.found).map((d) => ({ ...cards.paperCard(d._source, 'Saved', null), buddy_open: !!buddyByPaper[d._id], buddy_occurrence_id: buddyByPaper[d._id] || null }));
     const groups = gd.docs.filter((d) => d.found).map((d) => ({ ...cards.groupCard(d._source, joinedIds.has(d._id) ? 'Joined' : 'Saved', null), saved: ids('group').includes(d._id), joined: joinedIds.has(d._id) }));
 
-    // Matches: my right swipes on people where the reverse right swipe exists.
+    // Connections: people I asked or who asked me, where a request was accepted
+    // (or both of us were interested).
     const liked = rights.filter((s) => s.target_type === 'person').map((s) => s.target_id);
+    const askedMe = (await incomingSwipes(actor)).map((s) => s.actor_profile_id);
     const matches = [];
-    for (const other of liked) {
-      if (!(await isReciprocal(actor, other))) continue;
+    for (const other of [...new Set([...liked, ...askedMe])]) {
+      if (other === actor || !(await isConnected(actor, other))) continue;
       const [p, mine] = await Promise.all([profile(other), es.get(INDEX.actions, actionId(EVENT_ID, actor, 'swipe', 'person', other))]);
       matches.push({
-        ...cards.personCard(p, 'Mutual interest', null),
+        ...cards.personCard(p, 'Connected', null),
         contact_links: (p.public_links || []).map((l) => ({ kind: l.kind, label: l.label, url: l.url })),
-        opener: mine._source.opener || null,
+        opener: mine?._source.opener || null,
+        conversation_id: conversationId(EVENT_ID, actor, other),
         meetup_suggestion: await suggestion(ev, me, p),
       });
     }
@@ -433,7 +544,7 @@ function createService(es) {
 
   async function me(actor) { return publicSelf(await profile(actor)); }
 
-  return { feed, swipe, buddy, join, editOpener, saved, updateMe, me, event, HttpError, expertiseText };
+  return { feed, swipe, buddy, join, editOpener, saved, updateMe, me, event, notifications, respondTo, listMessages, postMessage, requestStatus, HttpError, expertiseText };
 }
 
 module.exports = { createService, HttpError };
