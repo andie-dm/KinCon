@@ -103,6 +103,12 @@ function createStore({ node = process.env.ELASTICSEARCH_URL, apiKey = process.en
     }
   }
 
+  async function seedIfEmpty(index, documents) {
+    if ((await search(index, { match_all: {} }, 1)).length === 0) {
+      await seed(index, documents);
+    }
+  }
+
   async function initialize() {
     requireClient();
     const created = await Promise.all(
@@ -111,8 +117,8 @@ function createStore({ node = process.env.ELASTICSEARCH_URL, apiKey = process.en
     const createdIndexes = new Map(created);
     await Promise.all([
       createdIndexes.get(INDEXES.sessions) ? seed(INDEXES.sessions, sessions) : null,
-      createdIndexes.get(INDEXES.people) ? seed(INDEXES.people, people) : null,
-      createdIndexes.get(INDEXES.groups) ? seed(INDEXES.groups, groups) : null,
+      seedIfEmpty(INDEXES.people, people),
+      seedIfEmpty(INDEXES.groups, groups),
     ]);
   }
 
