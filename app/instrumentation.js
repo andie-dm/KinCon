@@ -20,11 +20,9 @@ if (process.env.OTEL_EXPORTER_OTLP_ENDPOINT) {
 
   sdk.start();
 
-  const shutdown = () => sdk.shutdown().catch((error) => {
+  globalThis.otelShutdown = () => sdk.shutdown().catch((error) => {
     console.error('OpenTelemetry shutdown failed:', error.message);
   });
-  process.once('SIGTERM', shutdown);
-  process.once('SIGINT', shutdown);
 } else {
   console.warn('Dash0 telemetry is not configured; set OTEL_EXPORTER_OTLP_ENDPOINT to enable it');
 }

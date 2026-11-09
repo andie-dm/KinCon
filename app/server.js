@@ -31,27 +31,53 @@ async function initializeSearchIndex() {
   try {
     const indexExists = await searchClient.indices.exists({ index: searchIndex });
     if (!indexExists) {
-      await searchClient.indices.create({
-        index: searchIndex,
-        mappings: {
-          properties: {
-            id: { type: 'integer' },
-            time: { type: 'keyword' },
-            room: { type: 'keyword' },
-            title: { type: 'text' },
+      try {
+        await searchClient.indices.create({
+          index: searchIndex,
+          mappings: {
+            properties: {
+              id: { type: 'integer' },
+              time: { type: 'keyword' },
+              room: { type: 'keyword' },
+              title: { type: 'text' },
+            },
           },
-        },
-      });
+        });
+      } catch (error) {
+        const errorType = error.meta?.body?.error?.type;
+        if (errorType !== 'resource_already_exists_exception') {
+          throw error;
+        }
+      }
     }
 
-    await searchClient.bulk({
+    const result = await searchClient.bulk({
       index: searchIndex,
       refresh: 'wait_for',
       operations: sessions.flatMap((session) => [
-        { index: { _id: String(session.id) } },
+        { create: { _id: `fowpy-seed-${session.id}` } },
         session,
       ]),
     });
+
+    if (result.errors) {
+      const failures = result.items
+        .map((item) => item.create?.error)
+        .filter(Boolean);
+      const unexpectedFailures = failures.filter(
+        (error) => error.type !== 'version_conflict_engine_exception',
+      );
+      if (unexpectedFailures.length > 0) {
+        console.error(
+          `Elasticsearch bulk indexing had ${unexpectedFailures.length} failures:`,
+          unexpectedFailures[0].reason,
+        );
+        return;
+      }
+      console.log(`Elasticsearch seed sessions already existed in index ${searchIndex}`);
+      return;
+    }
+
     console.log(`indexed ${sessions.length} sessions in Elasticsearch index ${searchIndex}`);
   } catch (error) {
     console.error('Elasticsearch initialization failed:', error.message);
@@ -135,5 +161,10 @@ server.listen(port, () => {
   initializeSearchIndex();
 });
 
-// Exit cleanly when Kubernetes stops the pod, so rollouts don't drop requests.
-process.on('SIGTERM', () => server.close(() => process.exit(0)));
+// Exit cleanly when Kubernetes stops the pod, so rollouts don't drop requests or telemetry.
+const shutdown = () => server.close(async () => {
+  await globalThis.otelShutdown?.();
+  process.exit(0);
+});
+process.once('SIGTERM', shutdown);
+process.once('SIGINT', shutdown);
