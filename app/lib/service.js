@@ -298,6 +298,75 @@ function createService(es) {
       && ab._source.event_id === EVENT_ID && ba._source.event_id === EVENT_ID);
   }
 
+  async function chatStatus(actor, other) {
+    const [self, peer, ownLike, matched] = await Promise.all([
+      profile(actor), profile(other),
+      es.get(INDEX.actions, actionId(EVENT_ID, actor, 'swipe', 'person', other)),
+      isReciprocal(actor, other),
+    ]);
+    return {
+      self: { id: actor, name: self.display_name },
+      peer: { id: other, name: peer.display_name },
+      liked: ownLike?._source.direction === 'right',
+      matched,
+    };
+  }
+
+  async function requireChatMatch(actor, other) {
+    if (actor === other || !(await isReciprocal(actor, other))) {
+      throw new HttpError(403, 'Chat opens after you both choose to connect.');
+    }
+  }
+
+  // Chat actions share the existing unindexed text field with intro drafts.
+  // Each kind has its own records, so drafts never appear in conversations.
+  function chatMessage({ action_id, actor_profile_id, created_at, opener }) {
+    return { id: action_id, sender_id: actor_profile_id, sent_at: created_at, text: opener };
+  }
+
+  async function messages(actor, other) {
+    await requireChatMatch(actor, other);
+    const result = await es.search(INDEX.actions, {
+      size: 100,
+      query: { bool: {
+        filter: [{ term: { event_id: EVENT_ID } }, { term: { action_kind: 'chat_message' } }],
+        should: [[actor, other], [other, actor]].map(([sender, recipient]) => ({
+          bool: { filter: [{ term: { actor_profile_id: sender } }, { term: { target_id: recipient } }] },
+        })),
+        minimum_should_match: 1,
+      } },
+      sort: [{ created_at: 'desc' }, { action_id: 'desc' }],
+      _source: ['action_id', 'actor_profile_id', 'created_at', 'opener'],
+    });
+    return { messages: result.hits.hits.map(({ _source }) => chatMessage(_source)).reverse() };
+  }
+
+  async function sendMessage(actor, other, input) {
+    const text = typeof input?.text === 'string' ? input.text.trim() : '';
+    const requestId = input?.request_id;
+    if (!text || text.length > 1000 || typeof requestId !== 'string'
+      || !/^[a-f0-9-]{36}$/i.test(requestId)) {
+      throw new HttpError(400, 'A message of 1–1000 characters and a request ID are required.');
+    }
+    await requireChatMatch(actor, other);
+    const id = actionId(EVENT_ID, actor, 'chat_message', 'person', `${other}:${requestId}`);
+    const now = new Date().toISOString();
+    const doc = {
+      action_id: id, event_id: EVENT_ID, actor_profile_id: actor, action_kind: 'chat_message',
+      target_type: 'person', target_id: other, active: true, effective_at: now,
+      created_at: now, updated_at: now, revision: 1, opener: text,
+    };
+    try {
+      await es.request('PUT', `/${INDEX.actions}/_create/${id}`, doc, { query: { refresh: 'wait_for' } });
+    } catch (error) {
+      if (error.status !== 409) throw error;
+      const existing = await es.get(INDEX.actions, id);
+      if (existing?._source.opener !== text) throw new HttpError(409, 'That message ID was already used.');
+      return chatMessage(existing._source);
+    }
+    return chatMessage(doc);
+  }
+
   async function buddy(actor, paperId, occurrenceId) {
     const paper = await resolveTarget('paper', paperId);
     const saved = await es.get(INDEX.actions, actionId(EVENT_ID, actor, 'swipe', 'paper', paperId));
@@ -433,7 +502,7 @@ function createService(es) {
 
   async function me(actor) { return publicSelf(await profile(actor)); }
 
-  return { feed, swipe, buddy, join, editOpener, saved, updateMe, me, event, HttpError, expertiseText };
+  return { feed, swipe, buddy, join, editOpener, saved, updateMe, me, event, chatStatus, messages, sendMessage, HttpError, expertiseText };
 }
 
 module.exports = { createService, HttpError };

@@ -197,6 +197,11 @@ legend { font-size: 13px; font-weight: 600; margin-bottom: 14px; }
 input[type="radio"] { accent-color: #748e61; }
 .field { display: flex; flex-direction: column; gap: 8px; font-size: 11px; color: #758167; margin: 12px 0; }
 .field input, .field select, .field textarea { border: 1px solid #dedfd2; border-radius: 7px; padding: 11px; color: var(--ink); background: #fffef9; width: 100%; font-size: 12px; line-height: 1.6; }
+.chat-thread { display: grid; gap: 10px; max-height: min(42dvh, 360px); overflow-y: auto; border: 1px solid var(--line); border-radius: 9px; padding: 12px; }
+.chat-message { justify-self: start; max-width: 90%; background: var(--paper); border-radius: 9px; padding: 9px 12px; }
+.chat-message.mine { justify-self: end; background: var(--mint); }
+.chat-message small { font-size: 11px; }
+.chat-message p { margin: 4px 0 0; white-space: pre-wrap; overflow-wrap: anywhere; }
 .field textarea { resize: vertical; }
 .full { width: 100%; }
 .detail-subtitle { font: 22px/1.5 Georgia, serif; margin: 12px 0; }
