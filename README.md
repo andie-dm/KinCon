@@ -2,6 +2,10 @@
 
 Start here if your team has its own cluster at the hackathon: a virtual Kubernetes cluster (vcluster) where you're cluster-admin. You get a small app that `git push` deploys through Argo CD, and notes your coding agent reads so it ships through [Radar](https://radarhq.io)'s MCP server. Below is a menu of what Radar can do: pick what your project needs.
 
+## Gitar code review
+
+This repository is connected to [Gitar](https://app.gitar.ai) for AI-assisted pull request reviews. Open a pull request and wait for `gitar-bot` to post its summary and inline feedback. You can reply to a bot comment with a request such as `Please fix this issue and run CI validation`; Gitar will propose a follow-up commit after validating the change.
+
 ## The day
 
 - 11:00: before you write any code, get your cluster, open it in Radar Cloud, and connect your agent to Radar (steps below).
