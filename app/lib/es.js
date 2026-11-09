@@ -18,12 +18,13 @@ function client({ url = process.env.ELASTICSEARCH_URL, apiKey = process.env.ELAS
   const headers = { 'content-type': 'application/json' };
   if (apiKey) headers.authorization = `ApiKey ${apiKey}`;
 
-  async function request(method, path, body, { ok = [200, 201], query } = {}) {
+  async function request(method, path, body, { ok = [200, 201], query, timeoutMs = 15000 } = {}) {
     const qs = query ? '?' + new URLSearchParams(query).toString() : '';
     const res = await fetch(base + path + qs, {
       method,
       headers,
       body: body === undefined ? undefined : JSON.stringify(body),
+      signal: AbortSignal.timeout(timeoutMs),
     });
     const text = await res.text();
     let parsed;
@@ -35,7 +36,7 @@ function client({ url = process.env.ELASTICSEARCH_URL, apiKey = process.env.ELAS
   const enc = encodeURIComponent;
   return {
     request,
-    info: () => request('GET', '/'),
+    info: ({ timeoutMs } = {}) => request('GET', '/', undefined, { timeoutMs }),
     // GET by id is real-time: it sees a just-indexed document before refresh.
     get: async (index, id) => {
       const r = await request('GET', `/${index}/_doc/${enc(id)}`, undefined, { ok: [200, 404] });

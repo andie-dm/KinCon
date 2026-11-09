@@ -1,12 +1,12 @@
 {
-  "generated_at": "2026-11-09T21:11:56.128742+00:00",
+  "generated_at": "2026-11-09T21:38:03.581115+00:00",
   "conference_id": "aaai-25",
   "run": {
-    "limit": 0,
+    "limit": 3,
     "dry_run": false,
-    "selected": 3486,
+    "selected": 3,
     "write_stats": {
-      "skipped_unchanged": 3486
+      "updated": 3
     }
   },
   "source_collection_count": 3028,

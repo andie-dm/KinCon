@@ -198,6 +198,22 @@ def test_live_repeat_import_is_noop(es):
     assert es.search(M.PAPERS, {"size": 0, "aggs": {"o": {"sum": {"field": "occurrence_count"}}}})["aggregations"]["o"]["value"] == occ_before
 
 
+# Schedule-owned tags survive a paper re-import; the stale hash forces the next join to rewrite.
+@live
+def test_live_reimport_keeps_schedule_tags(es):
+    before = es.get(M.PAPERS, FLOWPOLICY)["_source"]
+    assert before["official_topics"] and before["schedule_hash"]
+    r = _run("scripts/import_conference_papers.py", "--conference", "AAAI-25", "--limit", "3", "--force")
+    assert r.returncode == 0, r.stderr[-2000:]
+    mid = es.get(M.PAPERS, FLOWPOLICY)["_source"]
+    assert mid["tags"] == before["tags"] and mid["tag_provenance"] == before["tag_provenance"]
+    assert mid["schedule_hash"] is None and mid["occurrences"] == before["occurrences"]
+    s = _run("scripts/import_schedules.py")
+    assert s.returncode == 0, s.stderr[-2000:]
+    after = es.get(M.PAPERS, FLOWPOLICY)["_source"]
+    assert after["schedule_hash"] == before["schedule_hash"] and after["tags"] == before["tags"]
+
+
 # 3. Documents written earlier under another ID scheme receive classification updates in place.
 @live
 def test_live_existing_ids_receive_classification(es):

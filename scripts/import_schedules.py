@@ -206,8 +206,14 @@ def main() -> int:
         stale = es.search(M.PAPERS, {"size": 5000, "_source": False, "query": {"bool": {
             "filter": [{"range": {"occurrence_count": {"gt": 0}}}], "must_not": [{"ids": {"values": ids}}]}}})
         for h in stale["hits"]["hits"]:
-            lines += [{"update": {"_index": M.PAPERS, "_id": h["_id"]}},
-                      {"doc": {"occurrences": [], "occurrence_count": 0, "schedule_status": "unscheduled"}}]
+            # Reset every schedule-owned field, including the hash, so a later
+            # rematch is written instead of skipped; tags fall back to title/abstract.
+            clear = {"occurrences": [], "occurrence_count": 0, "schedule_status": "unscheduled",
+                     "schedule_hash": None, "schedule_provenance": [], "official_topics": [], "updated_at": now}
+            p = pmap.get(h["_id"])
+            if p:
+                clear["tags"], clear["tag_provenance"] = p["tags"], p["tag_provenance"]
+            lines += [{"update": {"_index": M.PAPERS, "_id": h["_id"], "retry_on_conflict": 3}}, {"doc": clear}]
             write["cleared_stale"] += 1
         for i in range(0, len(lines), 1000):
             resp = es.bulk(lines[i:i + 1000])

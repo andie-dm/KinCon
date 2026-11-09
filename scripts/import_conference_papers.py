@@ -153,8 +153,9 @@ def existing_ids_by_doi(es, dois: list[str], index: str = M.PAPERS) -> dict[str,
     if not es.exists(index) or not dois:
         return {}
     r = es.search(index, {"size": len(dois) * 2, "query": {"terms": {"doi": dois}},
-                             "_source": ["doi", "content_hash"]})
-    return {h["_source"]["doi"]: {"_id": h["_id"], "content_hash": h["_source"].get("content_hash")}
+                             "_source": ["doi", "content_hash", "official_topics"]})
+    return {h["_source"]["doi"]: {"_id": h["_id"], "content_hash": h["_source"].get("content_hash"),
+                                  "scheduled_tags": bool(h["_source"].get("official_topics"))}
             for h in r["hits"]["hits"]}
 
 
@@ -175,8 +176,12 @@ def write_batch(es, docs: list[dict], force: bool, stats: Counter, failures: dic
         # separate `upsert` body skips semantic_text inference. Existing docs get a
         # partial `doc` update, which keeps occurrences and re-embeds changed text.
         if ex:
+            # Tags derived from official session topics belong to import_schedules.py.
+            # Changed paper content also invalidates schedule_hash, so the next
+            # schedule run recomputes those tags from the new title/abstract.
+            doc = {k: v for k, v in d.items() if not (ex.get("scheduled_tags") and k in ("tags", "tag_provenance"))}
             lines.append({"update": {"_index": index, "_id": _id, "retry_on_conflict": 3}})
-            lines.append({"doc": {**d, "updated_at": now}})
+            lines.append({"doc": {**doc, "schedule_hash": None, "updated_at": now}})
         else:
             lines.append({"create": {"_index": index, "_id": _id}})
             lines.append({**d, "ingested_at": now, "updated_at": now, "schedule_status": "unscheduled", "occurrence_count": 0})

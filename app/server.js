@@ -35,8 +35,11 @@ function cookies(req) {
 }
 
 // The actor comes only from the server-side demo session cookie.
+// Own keys only: inherited names such as "constructor" are not identities.
+const demoProfile = (key) => (typeof key === 'string' && Object.hasOwn(DEMO_SESSIONS, key) ? DEMO_SESSIONS[key] : null);
+
 function actorOf(req) {
-  const id = DEMO_SESSIONS[cookies(req).demo_session];
+  const id = demoProfile(cookies(req).demo_session);
   if (!id) throw new HttpError(401, 'choose a demo identity first: POST /api/demo/session {"identity":"riley"|"jules"}');
   return id;
 }
@@ -55,7 +58,7 @@ function apiRoutes(svc) {
   return [
     ['POST', /^\/api\/demo\/session$/, async (req, res) => {
       const { identity } = await readJson(req);
-      if (!DEMO_SESSIONS[identity]) throw new HttpError(400, `identity must be one of ${Object.keys(DEMO_SESSIONS).join(', ')}`);
+      if (!demoProfile(identity)) throw new HttpError(400, `identity must be one of ${Object.keys(DEMO_SESSIONS).join(', ')}`);
       send(res, 200, { identity, profile_id: DEMO_SESSIONS[identity] },
         { 'set-cookie': `demo_session=${identity}; Path=/; HttpOnly; SameSite=Lax` });
     }],
@@ -157,23 +160,20 @@ function createServer({ es = client() } = {}) {
       res.writeHead(400, { 'content-type': 'text/plain' });
       return res.end('bad request\n');
     }
-    if (url.pathname === '/healthz') {
+    // Probes stay local: an Elasticsearch outage must not pull the UI out of the
+    // Service. Dependency status is reported by /api/health instead.
+    if (url.pathname === '/healthz' || url.pathname === '/readyz') {
       res.writeHead(200, { 'content-type': 'text/plain' });
       return res.end('ok\n');
     }
-    if (url.pathname === '/readyz') {
-      // Without Elasticsearch configured the UI still works, so stay ready and
-      // let /api answer 503; a configured but unreachable cluster is not ready.
-      if (es) {
-        try {
-          await es.info();
-        } catch (e) {
-          res.writeHead(503, { 'content-type': 'text/plain' });
-          return res.end(`elasticsearch unreachable (${e.status || e.code || 'error'})\n`);
-        }
+    if (url.pathname === '/api/health') {
+      if (!es) return send(res, 503, { elasticsearch: 'not configured' });
+      try {
+        await es.info({ timeoutMs: 2000 });
+        return send(res, 200, { elasticsearch: 'ok' });
+      } catch (e) {
+        return send(res, 503, { elasticsearch: `unreachable (${e.status || e.name || 'error'})` });
       }
-      res.writeHead(200, { 'content-type': 'text/plain' });
-      return res.end('ok\n');
     }
     if (url.pathname === '/api/sessions') {
       res.writeHead(200, { 'content-type': 'application/json' });

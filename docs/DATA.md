@@ -119,7 +119,7 @@ Retrieval uses the `rrf` retriever (`rank_window_size` 50, `rank_constant` 60) o
 
 ## API (see PLAN.md for the agreed contract)
 
-`POST /api/demo/session {"identity":"riley"|"jules"}` · `GET/PUT /api/me` · `GET /api/feed?deck=research|people|groups[&paperId][&format=oral|poster][&from&to&room]` · `PUT /api/swipes/{paper|person|group}/{id} {"direction":"left|right"}` · `PUT /api/papers/{id}/buddy` · `PUT /api/groups/{id}/join` · `PUT /api/matches/{profileId}/opener` · `GET /api/me/saved` · `GET /api/event`
+`POST /api/demo/session {"identity":"riley"|"jules"}` · `GET/PUT /api/me` · `GET /api/feed?deck=research|people|groups[&paperId][&format=oral|poster][&from&to&room]` · `PUT /api/swipes/{paper|person|group}/{id} {"direction":"left|right"}` · `PUT /api/papers/{id}/buddy` · `PUT /api/groups/{id}/join` · `PUT /api/matches/{profileId}/opener` · `GET /api/me/saved` · `GET /api/event` · `GET /api/health` (Elasticsearch status; `/healthz` and `/readyz` stay local so an ES outage never takes the UI out of the Service)
 
 ## Example queries
 
