@@ -2,7 +2,7 @@ import { defineConfig } from 'vite';
 
 export default defineConfig({
   define: {
-    __APP_VERSION__: JSON.stringify(process.env.APP_VERSION || 'dev'),
+    __APP_VERSION__: JSON.stringify(process.env.APP_VERSION || process.env.COMMIT_REF?.slice(0, 7) || 'dev'),
   },
   server: {
     proxy: {

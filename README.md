@@ -46,6 +46,41 @@ and copies only the bundle and server into the runtime image. `APP_VERSION`
 supplied at build time appears in the UI for later deployment verification.
 Run focused checks with `npm --prefix app test`.
 
+## Publish the UI on Netlify
+
+For a quick, public, phone-friendly demo, deploy the static Vite bundle to
+Netlify. The demo is at **https://fowpy-conference-demo.netlify.app** and allows
+visitors without a Netlify login. `netlify.toml` sets the base directory to `app`, build command to
+`npm run build`, publish directory to `dist`, and Node version to 22.
+
+From the repository root:
+
+```bash
+npm --prefix app ci
+npm --prefix app run build
+npx --yes netlify-cli@27.16.3 login
+npx --yes netlify-cli@27.16.3 deploy --prod --no-build --dir app/dist --site fowpy-conference-demo
+```
+
+Authorize the CLI in your browser using an account with access to this project.
+To publish your own fork instead, omit `--site fowpy-conference-demo` and create
+a new Netlify project when prompted. Netlify prints its public HTTPS URL.
+Local project linking lives in `.netlify/`, which is ignored by git. If your
+team defaults to team-login protection, configure this demo project's visitor
+access to allow the public; do not change unrelated projects or team defaults.
+For automatic deployments, connect this existing Netlify project to
+`andie-dm/fowpy` in **Project configuration > Developer settings > Continuous
+deployment > Repository**, with **main** as the production branch. Grant the
+Netlify GitHub App access to this repository. `netlify.toml` supplies the build
+settings; each push to `main` then builds and publishes the UI at the same URL.
+Netlify builds display the source commit's first seven characters in the footer.
+The CLI commands above remain available for manual deployment.
+
+This publishes **only the UI**: the Node server, `/api/sessions`, `/healthz`,
+and `/readyz` are not deployed to Netlify. Each visitor still gets browser-local
+fictional demo state; real cross-device matches require the backend.
+Keep this static demo separate from the hackathon's UI + API GitOps deployment.
+
 ## Gitar code review
 
 This repository is connected to [Gitar](https://app.gitar.ai) for AI-assisted pull request reviews. Open a pull request and wait for `gitar-bot` to post its summary and inline feedback. You can reply to a bot comment with a request such as `Please fix this issue and run CI validation`; Gitar will propose a follow-up commit after validating the change.

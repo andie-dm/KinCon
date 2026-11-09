@@ -8,6 +8,7 @@
 
 node_modules/
 app/dist/
+.netlify/
 
 # Local screenshots and browser-check artifacts, not application image assets.
 .playwright-mcp/
