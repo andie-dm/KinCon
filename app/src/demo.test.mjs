@@ -71,8 +71,10 @@ test('malformed storage produces an explicit error and empty storage starts fres
   }
 });
 
+const blankState = () => ({ ...freshState(), swipes: {}, messages: {} });
+
 test('Interested sends a visible request the recipient can accept to open a chat', () => {
-  let state = swipe(freshState(), 'alex', findCard('people', 'jules'), 'right');
+  let state = swipe(blankState(), 'alex', findCard('people', 'jules'), 'right');
   assert.equal(requestStatus(state, 'alex', 'jules'), 'pending');
   assert.deepEqual(incomingRequests(state, 'jules'), ['alex']);
   assert.deepEqual(incomingRequests(state, 'alex'), []);
@@ -89,7 +91,7 @@ test('Interested sends a visible request the recipient can accept to open a chat
 });
 
 test('a declined request stays closed and only reads as not accepted', () => {
-  let state = swipe(freshState(), 'alex', findCard('people', 'jules'), 'right');
+  let state = swipe(blankState(), 'alex', findCard('people', 'jules'), 'right');
   state = respond(state, 'jules', 'alex', 'rejected');
   assert.equal(requestStatus(state, 'alex', 'jules'), 'not_accepted');
   assert.equal(isMatched(state, 'alex', 'jules'), false);
@@ -110,4 +112,27 @@ test('messages are validated and old saved demos load without chat data', () => 
   assert.deepEqual(parseState(JSON.stringify(legacy)).messages, {});
   assert.throws(() => parseState(JSON.stringify({ ...freshState(), responses: { x: 'maybe' } })));
   assert.throws(() => parseState(JSON.stringify({ ...freshState(), messages: { x: [{ from: 1 }] } })));
+});
+
+test('a fresh demo has dummy requests to accept, decline and open', () => {
+  let state = freshState();
+  assert.deepEqual(incomingRequests(state, 'alex'), ['sam', 'maya', 'leo']);
+  assert.deepEqual(incomingRequests(state, 'jules'), ['elle']);
+  // Their note is the first message, readable once accepted.
+  state = respond(state, 'alex', 'sam', 'accepted');
+  assert.equal(isMatched(state, 'alex', 'sam'), true);
+  assert.match(conversation(state, 'alex', 'sam')[0].body, /buddy/);
+  state = sendMessage(state, 'alex', 'sam', 'Yes, see you at 12:30!');
+  assert.equal(conversation(state, 'alex', 'sam').length, 2);
+  state = respond(state, 'alex', 'maya', 'rejected');
+  assert.equal(requestStatus(state, 'maya', 'alex'), 'not_accepted');
+  assert.deepEqual(incomingRequests(state, 'alex'), ['leo']);
+  // Older saved demos pick the requests up once without losing answers.
+  const legacy = { ...state, seededRequests: undefined };
+  delete legacy.seededRequests;
+  const migrated = parseState(JSON.stringify(legacy));
+  assert.equal(requestStatus(migrated, 'maya', 'alex'), 'not_accepted');
+  assert.equal(conversation(migrated, 'alex', 'sam').length, 2);
+  const old = parseState(JSON.stringify({ ...blankState(), seededRequests: undefined }));
+  assert.deepEqual(incomingRequests(old, 'alex'), ['sam', 'maya', 'leo']);
 });

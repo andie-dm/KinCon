@@ -1,15 +1,42 @@
 import { cards, defaultProfile, identities, findCard } from './fixtures.mjs';
 
 export const STORAGE_KEY = 'fowpy-demo-v1';
+
+// Fictional people who have already tapped Interested on a demo identity, so a
+// fresh demo has requests waiting to accept or decline. Their intro note is
+// the first chat message, visible once the request is accepted.
+export const SEEDED_REQUESTS = [
+  { from: 'sam', to: 'alex', at: '2025-03-01T11:42:00-05:00', note: "Hi Alex! First AAAI for me too. I'd love a buddy for the robotics posters at 12:30." },
+  { from: 'maya', to: 'alex', at: '2025-03-01T11:48:00-05:00', note: 'Saw you work on imitation learning. Happy to compare notes on getting policies working outside the lab.' },
+  { from: 'leo', to: 'alex', at: '2025-03-01T11:55:00-05:00', note: 'Flow matching question for you: has it actually sped up inference in your experiments?' },
+  { from: 'elle', to: 'jules', at: '2025-03-01T11:50:00-05:00', note: "Hey Jules, I'm into visual foresight. Want to check out the robot manipulation posters together?" },
+];
+
+const conversationOf = (a, b) => [a, b].sort().join('|');
+
 export const freshState = () => ({
   profiles: Object.fromEntries(identities.map(({ id }) => [id, { ...defaultProfile }])),
-  swipes: {},
+  swipes: Object.fromEntries(SEEDED_REQUESTS.map(({ from, to }) => [`${from}:people:${to}`, 'right'])),
   buddies: {},
   joins: {},
   drafts: {},
   responses: {},
-  messages: {},
+  messages: Object.fromEntries(SEEDED_REQUESTS.map(({ from, to, at, note }) => [conversationOf(from, to), [{ from, body: note, at }]])),
+  seededRequests: true,
 });
+
+// Demo data saved before the dummy requests existed gets them once; anything
+// already answered or written keeps its value.
+function addSeededRequests(state) {
+  if (state.seededRequests) return state;
+  const swipes = { ...state.swipes };
+  const messages = { ...state.messages };
+  for (const { from, to, at, note } of SEEDED_REQUESTS) {
+    swipes[`${from}:people:${to}`] ??= 'right';
+    messages[conversationOf(from, to)] ??= [{ from, body: note, at }];
+  }
+  return { ...state, swipes, messages, seededRequests: true };
+}
 
 export const MAX_MESSAGE_LENGTH = 1000;
 
@@ -40,7 +67,7 @@ export function parseState(raw) {
         !isRecord(message) || typeof message.from !== 'string' || typeof message.body !== 'string' || typeof message.at !== 'string'))) {
     throw new Error('Stored demo actions are invalid. Reset the demo to continue.');
   }
-  return state;
+  return addSeededRequests(state);
 }
 
 export const actionKey = (actor, type, id) => `${actor}:${type}:${id}`;
@@ -77,7 +104,7 @@ export function respond(state, actor, sender, decision) {
   return { ...state, responses: { ...state.responses, [actionKey(actor, 'people', sender)]: decision } };
 }
 
-export const conversationKey = (a, b) => [a, b].sort().join('|');
+export const conversationKey = conversationOf;
 export const conversation = (state, a, b) => state.messages[conversationKey(a, b)] || [];
 
 export function sendMessage(state, actor, other, body, at = new Date().toISOString()) {
