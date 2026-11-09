@@ -1,0 +1,1160 @@
+{
+  "generated_at": "2026-11-09T20:54:16.120895+00:00",
+  "note": "Schedule coverage is reported separately from bibliographic coverage (reports/paper_coverage.json).",
+  "sources": {
+    "oral_main_track_2025-02-22.pdf": {
+      "url": "https://aaai.org/wp-content/uploads/2025/02/AAAI-25-Main-Track-Oral-Talks-Schedule-2.22.pdf",
+      "published": "2025-02-22",
+      "authoritative": true,
+      "retrieved_at": "2026-11-09T20:18:23.332448+00:00",
+      "rows": 600,
+      "matched": 583,
+      "title_exact+author_confirmed": 255,
+      "title_prefix+author_confirmed": 323,
+      "title_fuzzy+author_confirmed": 5,
+      "unmatched": 13,
+      "ambiguous": 4,
+      "rows_without_parsed_slot": 0
+    },
+    "poster_saturday_2025-02-27.pdf": {
+      "url": "https://aaai.org/wp-content/uploads/2025/02/AAAI-25-Saturday-Poster-Schedule-2.27.25.pdf",
+      "published": "2025-02-27",
+      "authoritative": true,
+      "retrieved_at": "2026-11-09T20:18:32.767303+00:00",
+      "rows": 666,
+      "matched": 652,
+      "title_exact+author_confirmed": 634,
+      "ambiguous": 5,
+      "unmatched": 9,
+      "title_fuzzy+author_confirmed": 16,
+      "title_prefix+author_confirmed": 2,
+      "rows_without_parsed_slot": 0
+    },
+    "poster_main_track_2025-02-21.pdf": {
+      "url": "https://aaai.org/wp-content/uploads/2025/02/AAAI-25-Main-Track-Poster-Schedule-2.21.pdf",
+      "published": "2025-02-21",
+      "authoritative": true,
+      "retrieved_at": "2026-11-09T20:18:28.104206+00:00",
+      "rows": 1939,
+      "matched": 1904,
+      "title_exact+author_confirmed": 1840,
+      "title_prefix+author_confirmed": 7,
+      "title_fuzzy+author_confirmed": 57,
+      "unmatched": 19,
+      "ambiguous": 16,
+      "rows_without_parsed_slot": 0
+    },
+    "poster_saturday.pdf": {
+      "url": "https://aaai.org/wp-content/uploads/2025/01/AAAI-25-Poster-Schedule_2025-01-22_Saturday-Only.pdf",
+      "published": "2025-01-22",
+      "authoritative": false,
+      "retrieved_at": "2026-11-09T20:10:00+00:00",
+      "rows": 1009,
+      "matched": 1008,
+      "title_exact+author_confirmed": 1006,
+      "unmatched": 1,
+      "title_fuzzy+author_confirmed": 2,
+      "rows_without_parsed_slot": 19
+    }
+  },
+  "main_track_papers": 3028,
+  "main_track_papers_with_any_occurrence": 2264,
+  "main_track_papers_with_verified_occurrence": 1905,
+  "main_track_papers_with_multiple_occurrences": 581,
+  "other_program_papers_with_occurrence": 8,
+  "occurrences_by_format_and_status": {
+    "oral:time_verified_room_unconfirmed": 583,
+    "poster:unverified_superseded_source_only": 361,
+    "poster:verified": 1909
+  },
+  "ambiguous_matches_not_stored": 25,
+  "ambiguous_examples": [
+    {
+      "source": "oral_main_track_2025-02-22.pdf",
+      "page": 7,
+      "title": "Portcullis: A Scalable and Verifiable Privacy Gateway for for",
+      "authors": [
+        "Jiangou Zhan",
+        "Wenhui Zhang",
+        "Zheng"
+      ],
+      "reason": "fuzzy below threshold or not unique",
+      "candidates": [
+        {
+          "title": "portcullis a scalable and verifiable privacy gateway for third party llm inference",
+          "ratio": 0.831
+        }
+      ]
+    },
+    {
+      "source": "oral_main_track_2025-02-22.pdf",
+      "page": 9,
+      "title": "LLM-Powered Efficient User Simulator for Recommender",
+      "authors": [
+        "Zijian Zhang",
+        "Shuchang Liu",
+        "Ziru Liu",
+        "Rui"
+      ],
+      "reason": "fuzzy below threshold or not unique",
+      "candidates": [
+        {
+          "title": "llm powered user simulator for recommender system",
+          "ratio": 0.832
+        }
+      ]
+    },
+    {
+      "source": "oral_main_track_2025-02-22.pdf",
+      "page": 11,
+      "title": "Almost EFX for Three Types of Agents",
+      "authors": [
+        "Pratik Ghosal",
+        "Vishwa Prakash HV",
+        "Prajakta Nimbhorkar",
+        "Nithin Varma"
+      ],
+      "reason": "fuzzy below threshold or not unique",
+      "candidates": [
+        {
+          "title": "almost full efx for three and more types of agents",
+          "ratio": 0.837
+        }
+      ]
+    },
+    {
+      "source": "oral_main_track_2025-02-22.pdf",
+      "page": 17,
+      "title": "Dynamic Multi-Modal Recommendation Under Legal, Licensing, and Modality Constraints with Reverse BPR",
+      "authors": [
+        "Yash Sinha",
+        "Murari Mandal",
+        "Mohan Kankanhalli"
+      ],
+      "reason": "fuzzy below threshold or not unique",
+      "candidates": [
+        {
+          "title": "multi modal recommendation unlearning for legal licensing and modality constraints",
+          "ratio": 0.8
+        }
+      ]
+    },
+    {
+      "source": "poster_saturday_2025-02-27.pdf",
+      "page": 3,
+      "title": "Efficient Spike-driven Transformer For High-performance Image Segmentation",
+      "authors": [
+        "Zhenxin Lei",
+        "Man Yao",
+        "JiaKui Hu",
+        "Xinhao Luo"
+      ],
+      "reason": "fuzzy below threshold or not unique",
+      "candidates": [
+        {
+          "title": "spike2former efficient spiking transformer for high performance image segmentation",
+          "ratio": 0.872
+        }
+      ]
+    },
+    {
+      "source": "poster_saturday_2025-02-27.pdf",
+      "page": 7,
+      "title": "DriveEditor: 3D Information Guided Controllable Object Editing in Driving Scene",
+      "authors": [
+        "Yiyuan Liang",
+        "Liqun Chen",
+        "Zhiying Yan",
+        "Jiahuan Zhou"
+      ],
+      "reason": "fuzzy below threshold or not unique",
+      "candidates": [
+        {
+          "title": "driveeditor a unified 3d information guided framework for controllable object editing in driving scenes",
+          "ratio": 0.862
+        }
+      ]
+    },
+    {
+      "source": "poster_saturday_2025-02-27.pdf",
+      "page": 17,
+      "title": "Dynamic Multi-Modal Recommendation Under Legal, Licensing, and Modality Constraints with Reverse BPR",
+      "authors": [
+        "Yash Sinha",
+        "Murari Mandal",
+        "Mohan Kankanhalli"
+      ],
+      "reason": "fuzzy below threshold or not unique",
+      "candidates": [
+        {
+          "title": "multi modal recommendation unlearning for legal licensing and modality constraints",
+          "ratio": 0.8
+        }
+      ]
+    },
+    {
+      "source": "poster_saturday_2025-02-27.pdf",
+      "page": 19,
+      "title": "Almost EFX for Three Types of Agents",
+      "authors": [
+        "Pratik Ghosal",
+        "Vishwa Prakash HV",
+        "Prajakta Nimbhorkar",
+        "Nithin Varma"
+      ],
+      "reason": "fuzzy below threshold or not unique",
+      "candidates": [
+        {
+          "title": "almost full efx for three and more types of agents",
+          "ratio": 0.837
+        }
+      ]
+    },
+    {
+      "source": "poster_saturday_2025-02-27.pdf",
+      "page": 24,
+      "title": "DCILP: a distributed learning method for large-scale causal structure learning",
+      "authors": [
+        "Shuyu Dong",
+        "Michele Sebag",
+        "Kento Uemura",
+        "Akito Fujii"
+      ],
+      "reason": "fuzzy below threshold or not unique",
+      "candidates": [
+        {
+          "title": "dcilp a distributed approach for large scale causal structure learning",
+          "ratio": 0.884
+        }
+      ]
+    },
+    {
+      "source": "poster_main_track_2025-02-21.pdf",
+      "page": 18,
+      "title": "BigMac: A Light All-to-All Mixture-of-Experts Model Structure for Fast Training and Inference",
+      "authors": [
+        "Zewen Jin",
+        "Shengnan Wang",
+        "Jiaan Zhu",
+        "Hongrui Zhan"
+      ],
+      "reason": "fuzzy below threshold or not unique",
+      "candidates": [
+        {
+          "title": "bigmac a communication efficient mixture of experts model structure for fast training and inference",
+          "ratio": 0.838
+        }
+      ]
+    },
+    {
+      "source": "poster_main_track_2025-02-21.pdf",
+      "page": 23,
+      "title": "EmoReg: Directional Latent Vector Modeling for Emotional Intensity Regularization in Diffusion-based Voice Conversion",
+      "authors": [
+        "ERROR"
+      ],
+      "reason": "title_exact but author confirmation 0.00 < 0.5",
+      "candidates": [
+        {
+          "paper_id": "doi_10.1609_aaai.v39i22.34569",
+          "author_confirmation": 0.0
+        }
+      ]
+    },
+    {
+      "source": "poster_main_track_2025-02-21.pdf",
+      "page": 26,
+      "title": "3D Unsupervised Learning by Distilling 2D Open-Vocabulary Segmentation Models for Autonomous Driving",
+      "authors": [
+        "Boyi Sun",
+        "Yuhang Liu",
+        "Xingxia Wang",
+        "Bin Tian"
+      ],
+      "reason": "fuzzy below threshold or not unique",
+      "candidates": [
+        {
+          "title": "3d annotation free learning by distilling 2d open vocabulary segmentation models for autonomous driving",
+          "ratio": 0.897
+        }
+      ]
+    },
+    {
+      "source": "poster_main_track_2025-02-21.pdf",
+      "page": 29,
+      "title": "$\\textbf{ST}^3$: Accelerating Multimodal Large Language Model by $\\textbf{S}$patial-$\\textbf{T}$emporal Visual $\\textbf{T}$oken $\\textbf{T}$rimming",
+      "authors": [
+        "Jiedong Zhuang",
+        "Lu Lu",
+        "Ming Dai",
+        "Rui Hu"
+      ],
+      "reason": "fuzzy below threshold or not unique",
+      "candidates": [
+        {
+          "title": "st3 accelerating multimodal large language model by spatial temporal visual token trimming",
+          "ratio": 0.818
+        }
+      ]
+    },
+    {
+      "source": "poster_main_track_2025-02-21.pdf",
+      "page": 29,
+      "title": "Freely Enhancing Implicit Neural Representations via sym-Power Transformation",
+      "authors": [
+        "Weixiang Zhang",
+        "Shuzhao Xie",
+        "Chengwei Ren",
+        "Shijia Ge"
+      ],
+      "reason": "fuzzy below threshold or not unique",
+      "candidates": [
+        {
+          "title": "enhancing implicit neural representations via symmetric power transformation",
+          "ratio": 0.915
+        }
+      ]
+    },
+    {
+      "source": "poster_main_track_2025-02-21.pdf",
+      "page": 29,
+      "title": "Towards Adversarially Robust Condensed Dataset by Curvature Regularization",
+      "authors": [
+        "Eric Xue",
+        "Yijiang Li",
+        "Haoyang Liu",
+        "Peiran Wang"
+      ],
+      "reason": "fuzzy below threshold or not unique",
+      "candidates": [
+        {
+          "title": "towards adversarially robust dataset distillation by curvature regularization",
+          "ratio": 0.848
+        }
+      ]
+    },
+    {
+      "source": "poster_main_track_2025-02-21.pdf",
+      "page": 32,
+      "title": "ReTAG: Retrieval-Augmented Scene Graph Generation via Multi-Prototype Learning",
+      "authors": [
+        "Kanghoon Yoon",
+        "Kibum Kim",
+        "Jaehyeong Jeon",
+        "Yeonjun In"
+      ],
+      "reason": "fuzzy below threshold or not unique",
+      "candidates": [
+        {
+          "title": "ra sgg retrieval augmented scene graph generation framework via multi prototype learning",
+          "ratio": 0.909
+        }
+      ]
+    },
+    {
+      "source": "poster_main_track_2025-02-21.pdf",
+      "page": 34,
+      "title": "LLM-Powered Efficient User Simulator for Recommender System",
+      "authors": [
+        "Zijian Zhang",
+        "Shuchang Liu",
+        "Ziru Liu",
+        "Rui Zhong"
+      ],
+      "reason": "fuzzy below threshold or not unique",
+      "candidates": [
+        {
+          "title": "llm powered user simulator for recommender system",
+          "ratio": 0.907
+        }
+      ]
+    },
+    {
+      "source": "poster_main_track_2025-02-21.pdf",
+      "page": 46,
+      "title": "InverseCoder: Unleashing the Power of Instruction-Tuned Code LLMs with Inverse-Instruct",
+      "authors": [
+        "Yutong Wu",
+        "Di Huang",
+        "Wenxuan Shi",
+        "Wang Wei"
+      ],
+      "reason": "fuzzy below threshold or not unique",
+      "candidates": [
+        {
+          "title": "inversecoder self improving instruction tuned code llms with inverse instruct",
+          "ratio": 0.822
+        }
+      ]
+    },
+    {
+      "source": "poster_main_track_2025-02-21.pdf",
+      "page": 47,
+      "title": "TNCSE: Tensor Norm Constraints for Contrastive Learning of Sentence Embedding",
+      "authors": [
+        "Tianyu Zong",
+        "Bingkang Shi",
+        "Hongzhu Yi",
+        "Jungang Xu"
+      ],
+      "reason": "fuzzy below threshold or not unique",
+      "candidates": [
+        {
+          "title": "tncse tensor norm constraints for unsupervised contrastive learning of sentence embeddings",
+          "ratio": 0.916
+        }
+      ]
+    },
+    {
+      "source": "poster_main_track_2025-02-21.pdf",
+      "page": 48,
+      "title": "Fast Contiguous Somatic Hypermutations for Single-objective and Multi-objective Optimisation",
+      "authors": [
+        "Dogan Corus",
+        "Pietro Simone Oliveto",
+        "Donya Yazdani"
+      ],
+      "reason": "fuzzy below threshold or not unique",
+      "candidates": [
+        {
+          "title": "fast contiguous somatic hypermutations for single objective optimisation and multi objective optimisation via decomposition",
+          "ratio": 0.856
+        }
+      ]
+    },
+    {
+      "source": "poster_main_track_2025-02-21.pdf",
+      "page": 49,
+      "title": "Efficient Spike-driven Transformer For High-performance Image Segmentation",
+      "authors": [
+        "Zhenxin Lei",
+        "Man Yao",
+        "JiaKui Hu",
+        "Xinhao Luo"
+      ],
+      "reason": "fuzzy below threshold or not unique",
+      "candidates": [
+        {
+          "title": "spike2former efficient spiking transformer for high performance image segmentation",
+          "ratio": 0.872
+        }
+      ]
+    },
+    {
+      "source": "poster_main_track_2025-02-21.pdf",
+      "page": 51,
+      "title": "DriveEditor: 3D Information Guided Controllable Object Editing in Driving Scene",
+      "authors": [
+        "Yiyuan Liang",
+        "Liqun Chen",
+        "Zhiying Yan",
+        "Jiahuan Zhou"
+      ],
+      "reason": "fuzzy below threshold or not unique",
+      "candidates": [
+        {
+          "title": "driveeditor a unified 3d information guided framework for controllable object editing in driving scenes",
+          "ratio": 0.862
+        }
+      ]
+    },
+    {
+      "source": "poster_main_track_2025-02-21.pdf",
+      "page": 57,
+      "title": "Dynamic Multi-Modal Recommendation Under Legal, Licensing, and Modality Constraints with Reverse BPR",
+      "authors": [
+        "Yash Sinha",
+        "Murari Mandal",
+        "Mohan Kankanhalli"
+      ],
+      "reason": "fuzzy below threshold or not unique",
+      "candidates": [
+        {
+          "title": "multi modal recommendation unlearning for legal licensing and modality constraints",
+          "ratio": 0.8
+        }
+      ]
+    },
+    {
+      "source": "poster_main_track_2025-02-21.pdf",
+      "page": 58,
+      "title": "Almost EFX for Three Types of Agents",
+      "authors": [
+        "Pratik Ghosal",
+        "Vishwa Prakash HV",
+        "Prajakta Nimbhorkar",
+        "Nithin Varma"
+      ],
+      "reason": "fuzzy below threshold or not unique",
+      "candidates": [
+        {
+          "title": "almost full efx for three and more types of agents",
+          "ratio": 0.837
+        }
+      ]
+    },
+    {
+      "source": "poster_main_track_2025-02-21.pdf",
+      "page": 61,
+      "title": "DCILP: a distributed learning method for large-scale causal structure learning",
+      "authors": [
+        "Shuyu Dong",
+        "Michele Sebag",
+        "Kento Uemura",
+        "Akito Fujii"
+      ],
+      "reason": "fuzzy below threshold or not unique",
+      "candidates": [
+        {
+          "title": "dcilp a distributed approach for large scale causal structure learning",
+          "ratio": 0.884
+        }
+      ]
+    }
+  ],
+  "unmatched_rows": 42,
+  "unmatched_examples": [
+    {
+      "source": "oral_main_track_2025-02-22.pdf",
+      "page": 3,
+      "title": "$\\textit{Are Key-Phrases All that Reviewers Care About?}$ A"
+    },
+    {
+      "source": "oral_main_track_2025-02-22.pdf",
+      "page": 3,
+      "title": "BigMac: A Light All-to-All Mixture-of-Experts Model Structure"
+    },
+    {
+      "source": "oral_main_track_2025-02-22.pdf",
+      "page": 4,
+      "title": "M3Net: Mirror Attention in Lightweight Convolutional Neural"
+    },
+    {
+      "source": "oral_main_track_2025-02-22.pdf",
+      "page": 5,
+      "title": "Continual Learning of Text Classification Tasks using a Kernel-"
+    },
+    {
+      "source": "oral_main_track_2025-02-22.pdf",
+      "page": 6,
+      "title": "ToMATO: A Comprehensive Benchmark for Evaluating Theory"
+    },
+    {
+      "source": "oral_main_track_2025-02-22.pdf",
+      "page": 7,
+      "title": "TNCSE: Tensor Norm Constraints for Contrastive Learning of"
+    },
+    {
+      "source": "oral_main_track_2025-02-22.pdf",
+      "page": 12,
+      "title": "Advancing Large Language Model Fine-Tuning: A Efficient"
+    },
+    {
+      "source": "oral_main_track_2025-02-22.pdf",
+      "page": 15,
+      "title": "Polynomial-time Verifiable Sufficient Condition for"
+    },
+    {
+      "source": "oral_main_track_2025-02-22.pdf",
+      "page": 15,
+      "title": "REDGSL: Advancing Robust Graph Representation via"
+    },
+    {
+      "source": "oral_main_track_2025-02-22.pdf",
+      "page": 15,
+      "title": "Efficient Spike-driven Transformer For High-performance"
+    },
+    {
+      "source": "oral_main_track_2025-02-22.pdf",
+      "page": 16,
+      "title": "On the Sample Complexity of Opinion Convergence in"
+    },
+    {
+      "source": "oral_main_track_2025-02-22.pdf",
+      "page": 17,
+      "title": "ProtCLIP: Data-Efficient and Function-Informed Multi-"
+    },
+    {
+      "source": "oral_main_track_2025-02-22.pdf",
+      "page": 18,
+      "title": "Assessing the Creativity of LLMs in Mathematical Problem Solving"
+    },
+    {
+      "source": "poster_saturday_2025-02-27.pdf",
+      "page": 8,
+      "title": "DCHM: Dynamic Collaboration of Heterogeneous Models for Analyzing Time-Varying Body Shape Changes Using a Blockchain-Based Framework"
+    },
+    {
+      "source": "poster_saturday_2025-02-27.pdf",
+      "page": 15,
+      "title": "REDGSL: Advancing Robust Graph Representation via Efficient Dynamic Graph Structure Learning"
+    },
+    {
+      "source": "poster_saturday_2025-02-27.pdf",
+      "page": 18,
+      "title": "RouterRetriever: Exploring the Benefits of Routing over Multiple Expert Embedding Models"
+    },
+    {
+      "source": "poster_saturday_2025-02-27.pdf",
+      "page": 19,
+      "title": "On the Sample Complexity of Opinion Convergence in Networks"
+    },
+    {
+      "source": "poster_saturday_2025-02-27.pdf",
+      "page": 21,
+      "title": "Polynomial-time Verifiable Sufficient Condition for Consistency of CP-Theory"
+    },
+    {
+      "source": "poster_saturday_2025-02-27.pdf",
+      "page": 27,
+      "title": "Fairness Shields: A Neurosymbolic Approach for Guaranteed Fair Decision-Making"
+    },
+    {
+      "source": "poster_saturday_2025-02-27.pdf",
+      "page": 31,
+      "title": "ProtCLIP: Data-Efficient and Function-Informed Multi-Modality Learning of Proteins and Biotexts"
+    },
+    {
+      "source": "poster_saturday_2025-02-27.pdf",
+      "page": 41,
+      "title": "Assessing the Creativity of LLMs in Mathematical Problem Solving"
+    },
+    {
+      "source": "poster_saturday_2025-02-27.pdf",
+      "page": 41,
+      "title": "Advancing Large Language Model Fine-Tuning: A Efficient Prompt Tuning by Multi-Space Projection and Prompt Fusion"
+    },
+    {
+      "source": "poster_main_track_2025-02-21.pdf",
+      "page": 14,
+      "title": "Trustworthy Graph Neural Networks Through Rank-Based Conformal Prediction"
+    },
+    {
+      "source": "poster_main_track_2025-02-21.pdf",
+      "page": 17,
+      "title": "Continual Learning of Text Classification Tasks using a Kernel-based Method over Pre-trained Language Models"
+    },
+    {
+      "source": "poster_main_track_2025-02-21.pdf",
+      "page": 17,
+      "title": "A Musician\u201a\u00c4\u00f4s Muse: Detecting Performance Errors with Transformers"
+    },
+    {
+      "source": "poster_main_track_2025-02-21.pdf",
+      "page": 20,
+      "title": "Explainability with Baseline Exploration Exploitation"
+    },
+    {
+      "source": "poster_main_track_2025-02-21.pdf",
+      "page": 23,
+      "title": "M3Net: Mirror Attention in Lightweight Convolutional Neural Networks for Edge-based Audio Classification"
+    },
+    {
+      "source": "poster_main_track_2025-02-21.pdf",
+      "page": 23,
+      "title": "An Error-Accumulation-Resistant Ensemble Method for Unsupervised Dependency Parsing"
+    },
+    {
+      "source": "poster_main_track_2025-02-21.pdf",
+      "page": 25,
+      "title": "M2PA: A Multi-Memory Planning Agent for Open-World Inspired by Cognitive Theory"
+    },
+    {
+      "source": "poster_main_track_2025-02-21.pdf",
+      "page": 25,
+      "title": "ToMATO: A Comprehensive Benchmark for Evaluating Theory of Mind in Large Language Models"
+    },
+    {
+      "source": "poster_main_track_2025-02-21.pdf",
+      "page": 36,
+      "title": "LTLf Synthesis on First-Order Action Theories"
+    },
+    {
+      "source": "poster_main_track_2025-02-21.pdf",
+      "page": 39,
+      "title": "Hierarchical Vision Mamba with Sparsely Cross-Connected Layers"
+    },
+    {
+      "source": "poster_main_track_2025-02-21.pdf",
+      "page": 51,
+      "title": "DCHM: Dynamic Collaboration of Heterogeneous Models for Analyzing Time-Varying Body Shape Changes Using a Blockchain-Based Framework"
+    },
+    {
+      "source": "poster_main_track_2025-02-21.pdf",
+      "page": 56,
+      "title": "REDGSL: Advancing Robust Graph Representation via Efficient Dynamic Graph Structure Learning"
+    },
+    {
+      "source": "poster_main_track_2025-02-21.pdf",
+      "page": 57,
+      "title": "RouterRetriever: Exploring the Benefits of Routing over Multiple Expert Embedding Models"
+    },
+    {
+      "source": "poster_main_track_2025-02-21.pdf",
+      "page": 58,
+      "title": "On the Sample Complexity of Opinion Convergence in Networks"
+    },
+    {
+      "source": "poster_main_track_2025-02-21.pdf",
+      "page": 59,
+      "title": "Polynomial-time Verifiable Sufficient Condition for Consistency of CP-Theory"
+    },
+    {
+      "source": "poster_main_track_2025-02-21.pdf",
+      "page": 63,
+      "title": "Fairness Shields: A Neurosymbolic Approach for Guaranteed Fair Decision-Making"
+    },
+    {
+      "source": "poster_main_track_2025-02-21.pdf",
+      "page": 65,
+      "title": "ProtCLIP: Data-Efficient and Function-Informed Multi-Modality Learning of Proteins and Biotexts"
+    },
+    {
+      "source": "poster_main_track_2025-02-21.pdf",
+      "page": 70,
+      "title": "Assessing the Creativity of LLMs in Mathematical Problem Solving"
+    }
+  ],
+  "discrepancies": 381,
+  "discrepancy_counts": {
+    "rescheduled": 20,
+    "listed only in superseded 2025-01-22 Saturday schedule": 361
+  },
+  "discrepancy_examples": [
+    {
+      "paper_id": "doi_10.1609_aaai.v39i16.33855",
+      "title": "Offline Safe Reinforcement Learning Using Trajectory Classification",
+      "issue": "rescheduled: 2025-01-22 file lists 2025-03-01T12:30:00-05:00; newer official schedules list another poster slot (stale slot not stored)"
+    },
+    {
+      "paper_id": "doi_10.1609_aaai.v39i17.34008",
+      "title": "Marginal Benefit Driven RL Teacher for Unsupervised Environment Design",
+      "issue": "rescheduled: 2025-01-22 file lists 2025-03-01T12:30:00-05:00; newer official schedules list another poster slot (stale slot not stored)"
+    },
+    {
+      "paper_id": "doi_10.1609_aaai.v39i11.33223",
+      "title": "Breaking Symmetries in Quantified Graph Search: A Comparative Study",
+      "issue": "rescheduled: 2025-01-22 file lists 2025-03-01T12:30:00-05:00; newer official schedules list another poster slot (stale slot not stored)"
+    },
+    {
+      "paper_id": "doi_10.1609_aaai.v39i22.34497",
+      "title": "CoDe: Communication Delay-Tolerant Multi-Agent Collaboration via Dual Alignment of Intent and Timeliness",
+      "issue": "rescheduled: 2025-01-22 file lists 2025-03-01T12:30:00-05:00; newer official schedules list another poster slot (stale slot not stored)"
+    },
+    {
+      "paper_id": "doi_10.1609_aaai.v39i2.32131",
+      "title": "Semi-IIN: Semi-Supervised Intra-Inter Modal Interaction Learning Network for Multimodal Sentiment Analysis",
+      "issue": "rescheduled: 2025-01-22 file lists None; newer official schedules list another poster slot (stale slot not stored)"
+    },
+    {
+      "paper_id": "doi_10.1609_aaai.v39i15.33723",
+      "title": "DiffExp: Efficient Exploration in Reward Fine-tuning for Text-to-Image Diffusion Models",
+      "issue": "rescheduled: 2025-01-22 file lists None; newer official schedules list another poster slot (stale slot not stored)"
+    },
+    {
+      "paper_id": "doi_10.1609_aaai.v39i2.32152",
+      "title": "Enriching Multimodal Sentiment Analysis Through Textual Emotional Descriptions of Visual-Audio Content",
+      "issue": "listed only in superseded 2025-01-22 Saturday schedule; absent from 2.21 main-track and 2.27 Saturday poster schedules",
+      "slot": "2025-03-01T12:30:00-05:00"
+    },
+    {
+      "paper_id": "doi_10.1609_aaai.v39i17.34024",
+      "title": "On the Power of Convolution-Augmented Transformer",
+      "issue": "rescheduled: 2025-01-22 file lists None; newer official schedules list another poster slot (stale slot not stored)"
+    },
+    {
+      "paper_id": "doi_10.1609_aaai.v39i2.32156",
+      "title": "Learning Concept Prerequisite Relation via Global Knowledge Relation Optimization",
+      "issue": "listed only in superseded 2025-01-22 Saturday schedule; absent from 2.21 main-track and 2.27 Saturday poster schedules",
+      "slot": "2025-03-01T12:30:00-05:00"
+    },
+    {
+      "paper_id": "doi_10.1609_aaai.v39i10.33123",
+      "title": "Stable-Hair: Real-World Hair Transfer via Diffusion Model",
+      "issue": "rescheduled: 2025-01-22 file lists None; newer official schedules list another poster slot (stale slot not stored)"
+    },
+    {
+      "paper_id": "doi_10.1609_aaai.v39i11.33216",
+      "title": "Diffusion-based Synthetic Data Generation for Visible-Infrared Person Re-Identification",
+      "issue": "rescheduled: 2025-01-22 file lists None; newer official schedules list another poster slot (stale slot not stored)"
+    },
+    {
+      "paper_id": "doi_10.1609_aaai.v39i10.33146",
+      "title": "PHR-DIFF: Portrait Highlights Removal via Patch-aware Diffusion Model",
+      "issue": "rescheduled: 2025-01-22 file lists None; newer official schedules list another poster slot (stale slot not stored)"
+    },
+    {
+      "paper_id": "doi_10.1609_aaai.v39i10.33191",
+      "title": "Two-stream Beats One-stream: Asymmetric Siamese Network for Efficient Visual Tracking",
+      "issue": "rescheduled: 2025-01-22 file lists None; newer official schedules list another poster slot (stale slot not stored)"
+    },
+    {
+      "paper_id": "doi_10.1609_aaai.v39i20.35420",
+      "title": "A Plug-and-Play Bregman ADMM Module for Inferring Event Branches in Temporal Point Processes",
+      "issue": "rescheduled: 2025-01-22 file lists None; newer official schedules list another poster slot (stale slot not stored)"
+    },
+    {
+      "paper_id": "doi_10.1609_aaai.v39i15.33708",
+      "title": "Learnability of Parameter-Bounded Bayes Nets",
+      "issue": "rescheduled: 2025-01-22 file lists None; newer official schedules list another poster slot (stale slot not stored)"
+    },
+    {
+      "paper_id": "doi_10.1609_aaai.v39i1.32051",
+      "title": "Revisiting Tampered Scene Text Detection in the Era of Generative AI",
+      "issue": "rescheduled: 2025-01-22 file lists 2025-03-01T12:30:00-05:00; newer official schedules list another poster slot (stale slot not stored)"
+    },
+    {
+      "paper_id": "doi_10.1609_aaai.v39i19.34215",
+      "title": "Kernel Learning for Sample Constrained Black-Box Optimization",
+      "issue": "rescheduled: 2025-01-22 file lists 2025-03-01T12:30:00-05:00; newer official schedules list another poster slot (stale slot not stored)"
+    },
+    {
+      "paper_id": "doi_10.1609_aaai.v39i25.34883",
+      "title": "Mitigating Pervasive Modality Absence Through Multimodal Generalization and Refinement",
+      "issue": "rescheduled: 2025-01-22 file lists 2025-03-01T12:30:00-05:00; newer official schedules list another poster slot (stale slot not stored)"
+    },
+    {
+      "paper_id": "doi_10.1609_aaai.v39i12.33459",
+      "title": "Spatial-Temporal Knowledge Distillation for Takeaway Recommendation",
+      "issue": "rescheduled: 2025-01-22 file lists 2025-03-01T12:30:00-05:00; newer official schedules list another poster slot (stale slot not stored)"
+    },
+    {
+      "paper_id": "doi_10.1609_aaai.v39i12.33370",
+      "title": "Enhancing Diffusion Model with Auxiliary Information Mining-Exploration and Efficient Sampling Mechanism for Sequential Recommendation",
+      "issue": "rescheduled: 2025-01-22 file lists 2025-03-01T12:30:00-05:00; newer official schedules list another poster slot (stale slot not stored)"
+    },
+    {
+      "paper_id": "doi_10.1609_aaai.v39i19.34293",
+      "title": "Hybrid Data-Free Knowledge Distillation",
+      "issue": "rescheduled: 2025-01-22 file lists 2025-03-01T12:30:00-05:00; newer official schedules list another poster slot (stale slot not stored)"
+    },
+    {
+      "paper_id": "doi_10.1609_aaai.v39i22.34542",
+      "title": "Nuance Matters: Probing Epistemic Consistency in Causal Reasoning",
+      "issue": "rescheduled: 2025-01-22 file lists 2025-03-01T12:30:00-05:00; newer official schedules list another poster slot (stale slot not stored)"
+    },
+    {
+      "paper_id": "doi_10.1609_aaai.v39i1.32062",
+      "title": "Embedding Robust Watermarking into Pattern to Protect the Copyright of Ceramic Artifacts",
+      "issue": "listed only in superseded 2025-01-22 Saturday schedule; absent from 2.21 main-track and 2.27 Saturday poster schedules",
+      "slot": "2025-03-01T12:30:00-05:00"
+    },
+    {
+      "paper_id": "doi_10.1609_aaai.v39i1.32035",
+      "title": "WiFi CSI Based Temporal Activity Detection via Dual Pyramid Network",
+      "issue": "listed only in superseded 2025-01-22 Saturday schedule; absent from 2.21 main-track and 2.27 Saturday poster schedules",
+      "slot": "2025-03-01T12:30:00-05:00"
+    },
+    {
+      "paper_id": "doi_10.1609_aaai.v39i1.32059",
+      "title": "Predicting User Behavior in Smart Spaces with LLM-Enhanced Logs and Personalized Prompts",
+      "issue": "listed only in superseded 2025-01-22 Saturday schedule; absent from 2.21 main-track and 2.27 Saturday poster schedules",
+      "slot": "2025-03-01T12:30:00-05:00"
+    },
+    {
+      "paper_id": "doi_10.1609_aaai.v39i1.32112",
+      "title": "Text-Guided Fine-grained Counterfactual Inference for Short Video Fake News Detection",
+      "issue": "listed only in superseded 2025-01-22 Saturday schedule; absent from 2.21 main-track and 2.27 Saturday poster schedules",
+      "slot": "2025-03-01T12:30:00-05:00"
+    },
+    {
+      "paper_id": "doi_10.1609_aaai.v39i1.31982",
+      "title": "GLCF: A Global-Local Multimodal Coherence Analysis Framework for Talking Face Generation Detection",
+      "issue": "listed only in superseded 2025-01-22 Saturday schedule; absent from 2.21 main-track and 2.27 Saturday poster schedules",
+      "slot": "2025-03-01T12:30:00-05:00"
+    },
+    {
+      "paper_id": "doi_10.1609_aaai.v39i1.32071",
+      "title": "Aerodynamic Coefficients Prediction via Cross-Attention Fusion and Physical-Informed Training",
+      "issue": "listed only in superseded 2025-01-22 Saturday schedule; absent from 2.21 main-track and 2.27 Saturday poster schedules",
+      "slot": "2025-03-01T12:30:00-05:00"
+    },
+    {
+      "paper_id": "doi_10.1609_aaai.v39i1.32087",
+      "title": "SWAMamba: A Sliding Window Attention Mamba Framework for Predicting Translation Elongation Rates",
+      "issue": "listed only in superseded 2025-01-22 Saturday schedule; absent from 2.21 main-track and 2.27 Saturday poster schedules",
+      "slot": "2025-03-01T12:30:00-05:00"
+    },
+    {
+      "paper_id": "doi_10.1609_aaai.v39i1.32100",
+      "title": "Zero-Shot Learning for Materials Science Texts: Leveraging Duck Typing Principles",
+      "issue": "listed only in superseded 2025-01-22 Saturday schedule; absent from 2.21 main-track and 2.27 Saturday poster schedules",
+      "slot": "2025-03-01T12:30:00-05:00"
+    },
+    {
+      "paper_id": "doi_10.1609_aaai.v39i1.31998",
+      "title": "FoldToken: Learning Protein Language via Vector Quantization and Beyond",
+      "issue": "listed only in superseded 2025-01-22 Saturday schedule; absent from 2.21 main-track and 2.27 Saturday poster schedules",
+      "slot": "2025-03-01T12:30:00-05:00"
+    },
+    {
+      "paper_id": "doi_10.1609_aaai.v39i1.32063",
+      "title": "ODDN: Addressing Unpaired Data Challenges in Open-World Deepfake Detection on Online Social Networks",
+      "issue": "listed only in superseded 2025-01-22 Saturday schedule; absent from 2.21 main-track and 2.27 Saturday poster schedules",
+      "slot": "2025-03-01T12:30:00-05:00"
+    },
+    {
+      "paper_id": "doi_10.1609_aaai.v39i1.32091",
+      "title": "Revolutionizing Encrypted Traffic Classification with MH-Net: A Multi-View Heterogeneous Graph Model",
+      "issue": "listed only in superseded 2025-01-22 Saturday schedule; absent from 2.21 main-track and 2.27 Saturday poster schedules",
+      "slot": "2025-03-01T12:30:00-05:00"
+    },
+    {
+      "paper_id": "doi_10.1609_aaai.v39i1.32031",
+      "title": "Recoverable Facial Identity Protection via Adaptive Makeup Transfer Adversarial Attacks",
+      "issue": "listed only in superseded 2025-01-22 Saturday schedule; absent from 2.21 main-track and 2.27 Saturday poster schedules",
+      "slot": "2025-03-01T12:30:00-05:00"
+    },
+    {
+      "paper_id": "doi_10.1609_aaai.v39i1.32005",
+      "title": "Hypergraph Attacks via Injecting Homogeneous Nodes into Elite Hyperedges",
+      "issue": "listed only in superseded 2025-01-22 Saturday schedule; absent from 2.21 main-track and 2.27 Saturday poster schedules",
+      "slot": "2025-03-01T12:30:00-05:00"
+    },
+    {
+      "paper_id": "doi_10.1609_aaai.v39i1.32028",
+      "title": "A Thorough Comparison Between Independent Cascade and Susceptible-Infected-Recovered Models",
+      "issue": "listed only in superseded 2025-01-22 Saturday schedule; absent from 2.21 main-track and 2.27 Saturday poster schedules",
+      "slot": "2025-03-01T12:30:00-05:00"
+    },
+    {
+      "paper_id": "doi_10.1609_aaai.v39i1.32090",
+      "title": "BERT-Based Code Learning for Exception Localization and Type Prediction",
+      "issue": "listed only in superseded 2025-01-22 Saturday schedule; absent from 2.21 main-track and 2.27 Saturday poster schedules",
+      "slot": "2025-03-01T12:30:00-05:00"
+    },
+    {
+      "paper_id": "doi_10.1609_aaai.v39i2.32144",
+      "title": "Knowledge-Enhanced Hierarchical Heterogeneous Graph for Personality Identification with Limited Training Data",
+      "issue": "listed only in superseded 2025-01-22 Saturday schedule; absent from 2.21 main-track and 2.27 Saturday poster schedules",
+      "slot": "2025-03-01T12:30:00-05:00"
+    },
+    {
+      "paper_id": "doi_10.1609_aaai.v39i2.32159",
+      "title": "PerReactor: Offline Personalised Multiple Appropriate Facial Reaction Generation",
+      "issue": "listed only in superseded 2025-01-22 Saturday schedule; absent from 2.21 main-track and 2.27 Saturday poster schedules",
+      "slot": "2025-03-01T12:30:00-05:00"
+    },
+    {
+      "paper_id": "doi_10.1609_aaai.v39i2.32134",
+      "title": "Multi-to-Single: Reducing Multimodal Dependency in Emotion Recognition Through Contrastive Learning",
+      "issue": "listed only in superseded 2025-01-22 Saturday schedule; absent from 2.21 main-track and 2.27 Saturday poster schedules",
+      "slot": "2025-03-01T12:30:00-05:00"
+    },
+    {
+      "paper_id": "doi_10.1609_aaai.v39i18.34171",
+      "title": "ALADE-SNN: Adaptive Logit Alignment in Dynamically Expandable Spiking Neural Networks for Class Incremental Learning",
+      "issue": "listed only in superseded 2025-01-22 Saturday schedule; absent from 2.21 main-track and 2.27 Saturday poster schedules",
+      "slot": "2025-03-01T12:30:00-05:00"
+    },
+    {
+      "paper_id": "doi_10.1609_aaai.v39i2.32126",
+      "title": "Spike2Former: Efficient Spiking Transformer for High-performance Image Segmentation",
+      "issue": "listed only in superseded 2025-01-22 Saturday schedule; absent from 2.21 main-track and 2.27 Saturday poster schedules",
+      "slot": "2025-03-01T12:30:00-05:00"
+    },
+    {
+      "paper_id": "doi_10.1609_aaai.v39i2.32130",
+      "title": "Towards Accurate Binary Spiking Neural Networks: Learning with Adaptive Gradient Modulation Mechanism",
+      "issue": "listed only in superseded 2025-01-22 Saturday schedule; absent from 2.21 main-track and 2.27 Saturday poster schedules",
+      "slot": "2025-03-01T12:30:00-05:00"
+    },
+    {
+      "paper_id": "doi_10.1609_aaai.v39i2.32132",
+      "title": "Towards More Discriminative Feature Learning in SNNs with Temporal-Self-Erasing Supervision",
+      "issue": "listed only in superseded 2025-01-22 Saturday schedule; absent from 2.21 main-track and 2.27 Saturday poster schedules",
+      "slot": "2025-03-01T12:30:00-05:00"
+    },
+    {
+      "paper_id": "doi_10.1609_aaai.v39i2.32116",
+      "title": "SocialSim: Towards Socialized Simulation of Emotional Support Conversation",
+      "issue": "listed only in superseded 2025-01-22 Saturday schedule; absent from 2.21 main-track and 2.27 Saturday poster schedules",
+      "slot": "2025-03-01T12:30:00-05:00"
+    },
+    {
+      "paper_id": "doi_10.1609_aaai.v39i4.32442",
+      "title": "C2PD: Continuity-Constrained Pixelwise Deformation for Guided Depth Super-Resolution",
+      "issue": "listed only in superseded 2025-01-22 Saturday schedule; absent from 2.21 main-track and 2.27 Saturday poster schedules",
+      "slot": "2025-03-01T12:30:00-05:00"
+    },
+    {
+      "paper_id": "doi_10.1609_aaai.v39i6.32710",
+      "title": "High-Fidelity Polarimetric Implicit 3D Reconstruction with View-Dependent Physical Representation",
+      "issue": "listed only in superseded 2025-01-22 Saturday schedule; absent from 2.21 main-track and 2.27 Saturday poster schedules",
+      "slot": "2025-03-01T12:30:00-05:00"
+    },
+    {
+      "paper_id": "doi_10.1609_aaai.v39i5.32525",
+      "title": "Hyperbolic-Constraint Point Cloud Reconstruction from Single RGB-D Images",
+      "issue": "listed only in superseded 2025-01-22 Saturday schedule; absent from 2.21 main-track and 2.27 Saturday poster schedules",
+      "slot": null
+    },
+    {
+      "paper_id": "doi_10.1609_aaai.v39i8.32925",
+      "title": "Enhancing Close-up Novel View Synthesis via Pseudo-labeling",
+      "issue": "listed only in superseded 2025-01-22 Saturday schedule; absent from 2.21 main-track and 2.27 Saturday poster schedules",
+      "slot": "2025-03-01T12:30:00-05:00"
+    },
+    {
+      "paper_id": "doi_10.1609_aaai.v39i9.33045",
+      "title": "STGC-NeRF: Spatial-Temporal Geometric Consistency for LiDAR Neural Radiance Fields in Dynamic Scenes",
+      "issue": "listed only in superseded 2025-01-22 Saturday schedule; absent from 2.21 main-track and 2.27 Saturday poster schedules",
+      "slot": "2025-03-01T12:30:00-05:00"
+    },
+    {
+      "paper_id": "doi_10.1609_aaai.v39i3.32251",
+      "title": "Bridge 2D-3D: Uncertainty-aware Hierarchical Registration Network with Domain Alignment",
+      "issue": "listed only in superseded 2025-01-22 Saturday schedule; absent from 2.21 main-track and 2.27 Saturday poster schedules",
+      "slot": "2025-03-01T12:30:00-05:00"
+    },
+    {
+      "paper_id": "doi_10.1609_aaai.v39i10.33103",
+      "title": "Bootstraping Clustering of Gaussians for View-consistent 3D Scene Understanding",
+      "issue": "listed only in superseded 2025-01-22 Saturday schedule; absent from 2.21 main-track and 2.27 Saturday poster schedules",
+      "slot": "2025-03-01T12:30:00-05:00"
+    },
+    {
+      "paper_id": "doi_10.1609_aaai.v39i10.33197",
+      "title": "DreaMark: Rooting Watermark in Score Distillation Sampling Generated Neural Radiance Fields",
+      "issue": "listed only in superseded 2025-01-22 Saturday schedule; absent from 2.21 main-track and 2.27 Saturday poster schedules",
+      "slot": "2025-03-01T12:30:00-05:00"
+    },
+    {
+      "paper_id": "doi_10.1609_aaai.v39i10.33173",
+      "title": "All-in-One: Transferring Vision Foundation Models into Stereo Matching",
+      "issue": "listed only in superseded 2025-01-22 Saturday schedule; absent from 2.21 main-track and 2.27 Saturday poster schedules",
+      "slot": "2025-03-01T12:30:00-05:00"
+    },
+    {
+      "paper_id": "doi_10.1609_aaai.v39i9.33046",
+      "title": "KeyPose: Category-Level 6D Object Pose Estimation with Self-Adaptive Keypoints",
+      "issue": "listed only in superseded 2025-01-22 Saturday schedule; absent from 2.21 main-track and 2.27 Saturday poster schedules",
+      "slot": "2025-03-01T12:30:00-05:00"
+    },
+    {
+      "paper_id": "doi_10.1609_aaai.v39i3.32324",
+      "title": "Rethinking Masked Data Reconstruction Pretraining for Strong 3D Action Representation Learning",
+      "issue": "listed only in superseded 2025-01-22 Saturday schedule; absent from 2.21 main-track and 2.27 Saturday poster schedules",
+      "slot": "2025-03-01T12:30:00-05:00"
+    },
+    {
+      "paper_id": "doi_10.1609_aaai.v39i10.33125",
+      "title": "Leveraging Consistent Spatio-Temporal Correspondence for Robust Visual Odometry",
+      "issue": "listed only in superseded 2025-01-22 Saturday schedule; absent from 2.21 main-track and 2.27 Saturday poster schedules",
+      "slot": "2025-03-01T12:30:00-05:00"
+    },
+    {
+      "paper_id": "doi_10.1609_aaai.v39i5.32515",
+      "title": "Revisiting CAD Model Generation by Learning Raster Sketch",
+      "issue": "listed only in superseded 2025-01-22 Saturday schedule; absent from 2.21 main-track and 2.27 Saturday poster schedules",
+      "slot": "2025-03-01T12:30:00-05:00"
+    },
+    {
+      "paper_id": "doi_10.1609_aaai.v39i3.32274",
+      "title": "Adaptive Siamese Masked Autoencoder with Global Optimization for Unsupervised Point Cloud Shape Correspondence",
+      "issue": "listed only in superseded 2025-01-22 Saturday schedule; absent from 2.21 main-track and 2.27 Saturday poster schedules",
+      "slot": "2025-03-01T12:30:00-05:00"
+    },
+    {
+      "paper_id": "doi_10.1609_aaai.v39i3.32272",
+      "title": "Deep Non-Rigid Structure-from-Motion Revisited: Canonicalization and Sequence Modeling",
+      "issue": "listed only in superseded 2025-01-22 Saturday schedule; absent from 2.21 main-track and 2.27 Saturday poster schedules",
+      "slot": "2025-03-01T12:30:00-05:00"
+    }
+  ],
+  "demo_papers": {
+    "FlowPolicy: Enabling Fast and Robust 3D Flow-Based Policy via Consistency Flow Matching for Robot Manipulation": {
+      "paper_id": "doi_10.1609_aaai.v39i14.33617",
+      "occurrences": [
+        {
+          "occurrence_id": "occ_19616ff7bd625f9e",
+          "session_id": null,
+          "session_title": "Robotics",
+          "format": "oral",
+          "starts_at": "2025-03-01T09:30:00-05:00",
+          "ends_at": "2025-03-01T10:45:00-05:00",
+          "time_zone": "America/New_York",
+          "room": null,
+          "building": null,
+          "venue": null,
+          "board": null,
+          "schedule_submission_id": "5967",
+          "source_url": "https://aaai.org/wp-content/uploads/2025/02/AAAI-25-Main-Track-Oral-Talks-Schedule-2.22.pdf",
+          "source_urls": [
+            "https://aaai.org/wp-content/uploads/2025/02/AAAI-25-Main-Track-Oral-Talks-Schedule-2.22.pdf"
+          ],
+          "match_method": "title_prefix+author_confirmed",
+          "match_score": 1.0,
+          "time_status": "published",
+          "verified_at": "2026-11-09T20:54:16.120895+00:00",
+          "location_status": "room_not_published",
+          "verification_status": "time_verified_room_unconfirmed"
+        },
+        {
+          "occurrence_id": "occ_4e3ce7c082457798",
+          "session_id": null,
+          "session_title": null,
+          "format": "poster",
+          "starts_at": "2025-03-01T12:30:00-05:00",
+          "ends_at": "2025-03-01T14:30:00-05:00",
+          "time_zone": "America/New_York",
+          "room": "Exhibit Hall E",
+          "building": "200 Level, West Building",
+          "venue": "Pennsylvania Convention Center, Philadelphia",
+          "board": "746",
+          "schedule_submission_id": "5967",
+          "source_url": "https://aaai.org/wp-content/uploads/2025/02/AAAI-25-Saturday-Poster-Schedule-2.27.25.pdf",
+          "source_urls": [
+            "https://aaai.org/wp-content/uploads/2025/02/AAAI-25-Saturday-Poster-Schedule-2.27.25.pdf",
+            "https://aaai.org/wp-content/uploads/2025/02/AAAI-25-Main-Track-Poster-Schedule-2.21.pdf",
+            "https://aaai.org/wp-content/uploads/2025/01/AAAI-25-Poster-Schedule_2025-01-22_Saturday-Only.pdf",
+            "https://aaai.org/conference/aaai/aaai-25/poster-sessions/"
+          ],
+          "match_method": "title_exact+author_confirmed",
+          "match_score": 1.0,
+          "time_status": "published",
+          "verified_at": "2026-11-09T20:54:16.120895+00:00",
+          "location_status": "venue_published",
+          "verification_status": "verified"
+        }
+      ]
+    },
+    "Self-Correcting Robot Manipulation via Gaussian-Splatted Foresight": {
+      "paper_id": "doi_10.1609_aaai.v39i25.34866",
+      "occurrences": [
+        {
+          "occurrence_id": "occ_0487ef2e810231a7",
+          "session_id": null,
+          "session_title": null,
+          "format": "poster",
+          "starts_at": "2025-03-01T12:30:00-05:00",
+          "ends_at": "2025-03-01T14:30:00-05:00",
+          "time_zone": "America/New_York",
+          "room": null,
+          "building": null,
+          "venue": null,
+          "board": null,
+          "schedule_submission_id": "3245",
+          "source_url": "https://aaai.org/wp-content/uploads/2025/01/AAAI-25-Poster-Schedule_2025-01-22_Saturday-Only.pdf",
+          "source_urls": [
+            "https://aaai.org/wp-content/uploads/2025/01/AAAI-25-Poster-Schedule_2025-01-22_Saturday-Only.pdf"
+          ],
+          "match_method": "title_exact+author_confirmed",
+          "match_score": 1.0,
+          "time_status": "superseded_source_only",
+          "verified_at": null,
+          "location_status": "unconfirmed",
+          "verification_status": "unverified_superseded_source_only"
+        }
+      ]
+    }
+  },
+  "write": {
+    "paper_not_indexed": 0,
+    "skipped_unchanged": 2272
+  },
+  "bulk_failures": {
+    "permanent": [],
+    "retryable": []
+  }
+}

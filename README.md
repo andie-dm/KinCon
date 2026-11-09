@@ -247,3 +247,11 @@ Connect your own cluster to Radar Cloud. Hackathon participants get 3 months of 
 ## Help
 
 Find Roy, Nadav or Arlen at the Radar table, or ask in `#cnh-hackathon` on the [Radar Discord](https://radarhq.io/community/chat).
+
+## AAAI-25 replay: data, search and social actions
+
+The networking demo replays AAAI-25 (Philadelphia, Feb 25 - Mar 4, 2025). **Real:** the 3,028 main-track papers (titles, abstracts, every credited author, DOIs), checked against the official proceedings, and the published oral/poster schedules. **Fictional:** the 12 demo attendees, 3 meetups and their likes/joins (`is_fictional: true`). A poster listing never claims an author will be present.
+
+- Setup, ID and field contracts, ranking, privacy rules, example queries: [docs/DATA.md](docs/DATA.md)
+- Coverage and discrepancies: [reports/IMPORT_REPORT.md](reports/IMPORT_REPORT.md)
+- Commands: `python3 scripts/import_conference_papers.py --conference AAAI-25 --limit 100` (smoke) / `--limit 0` (full)

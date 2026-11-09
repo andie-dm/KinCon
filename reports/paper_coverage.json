@@ -1,0 +1,68 @@
+{
+  "generated_at": "2026-11-09T20:52:06.706272+00:00",
+  "conference_id": "aaai-25",
+  "run": {
+    "limit": 0,
+    "dry_run": false,
+    "selected": 3486,
+    "write_stats": {
+      "skipped_unchanged": 3486
+    }
+  },
+  "source_collection_count": 3028,
+  "source_collection_note": "ai-conferences/AAAI2025 train split; the dataset's own track/issue labels are not trusted for membership.",
+  "proceedings_entries_volume_39": 3486,
+  "proceedings_entries_by_issue": {
+    "1": 139,
+    "2": 123,
+    "3": 124,
+    "4": 118,
+    "5": 117,
+    "6": 123,
+    "7": 122,
+    "8": 123,
+    "9": 123,
+    "10": 121,
+    "11": 123,
+    "12": 144,
+    "13": 119,
+    "14": 83,
+    "15": 125,
+    "16": 125,
+    "17": 126,
+    "18": 126,
+    "19": 126,
+    "20": 125,
+    "21": 123,
+    "22": 110,
+    "23": 115,
+    "24": 115,
+    "25": 110,
+    "26": 66,
+    "27": 145,
+    "28": 247
+  },
+  "authoritative_main_track_count": 3028,
+  "dataset_records_matched_to_main_track_toc": 3028,
+  "backfilled_from_proceedings": {
+    "main_track": 0,
+    "other_programs": 458
+  },
+  "dataset_records_not_in_proceedings": [],
+  "verified_imported_main_track_count": 3028,
+  "missing_main_track_dois_in_index": [],
+  "missing_main_track_count": 0,
+  "ambiguous_classifications": [],
+  "duplicate_doi_findings": [],
+  "duplicate_normalized_titles": [],
+  "author_list_discrepancies_vs_toc": {
+    "count": 0,
+    "examples": []
+  },
+  "bulk_failures": {
+    "permanent": [],
+    "retryable_exhausted": []
+  },
+  "unresolved_source_discrepancies": [],
+  "abstract_missing": 458
+}

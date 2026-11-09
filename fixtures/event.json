@@ -1,0 +1,387 @@
+{
+  "event_id": "aaai-25-replay",
+  "conference_id": "aaai-25",
+  "display_name": "AAAI-25 replay",
+  "replay_mode": "historical_replay",
+  "demo_clock": "2025-03-01T12:00:00-05:00",
+  "time_zone": "America/New_York",
+  "topic_vocabulary": [
+    {
+      "tag": "robotics",
+      "label": "Robotics",
+      "official_topics": [
+        "ROB:",
+        "CV: Vision for Robotics"
+      ],
+      "aliases": [
+        "robot",
+        "robotic",
+        "manipulation",
+        "grasping",
+        "locomotion",
+        "embodied"
+      ]
+    },
+    {
+      "tag": "reinforcement-learning",
+      "label": "Reinforcement learning",
+      "official_topics": [
+        "ML: Reinforcement Learning",
+        "MAS: Multiagent Learning"
+      ],
+      "aliases": [
+        "reinforcement learning",
+        "policy gradient",
+        "q-learning",
+        "offline rl",
+        "multi-agent rl",
+        "marl"
+      ]
+    },
+    {
+      "tag": "imitation-learning",
+      "label": "Imitation learning",
+      "official_topics": [
+        "ML: Imitation Learning"
+      ],
+      "aliases": [
+        "imitation learning",
+        "behavior cloning",
+        "behaviour cloning",
+        "learning from demonstration",
+        "inverse reinforcement learning",
+        "visuomotor policy"
+      ]
+    },
+    {
+      "tag": "flow-matching",
+      "label": "Flow matching",
+      "official_topics": [],
+      "aliases": [
+        "flow matching",
+        "rectified flow",
+        "consistency flow",
+        "normalizing flow"
+      ]
+    },
+    {
+      "tag": "diffusion-models",
+      "label": "Diffusion models",
+      "official_topics": [],
+      "aliases": [
+        "diffusion model",
+        "diffusion models",
+        "denoising diffusion",
+        "score-based",
+        "latent diffusion",
+        "diffusion policy"
+      ]
+    },
+    {
+      "tag": "3d-vision",
+      "label": "3D vision",
+      "official_topics": [
+        "CV: 3D Computer Vision"
+      ],
+      "aliases": [
+        "gaussian splatting",
+        "gaussian-splatted",
+        "3d gaussian",
+        "point cloud",
+        "nerf",
+        "neural radiance",
+        "3d reconstruction",
+        "depth estimation"
+      ]
+    },
+    {
+      "tag": "llms",
+      "label": "Large language models",
+      "official_topics": [
+        "NLP: (Large) Language Models"
+      ],
+      "aliases": [
+        "large language model",
+        "llm",
+        "llms",
+        "gpt-4",
+        "in-context learning",
+        "instruction tuning",
+        "chain-of-thought"
+      ]
+    },
+    {
+      "tag": "multimodal",
+      "label": "Multimodal learning",
+      "official_topics": [
+        "ML: Multimodal Learning",
+        "CV: Multi-modal Vision",
+        "CV: Language and Vision"
+      ],
+      "aliases": [
+        "multimodal",
+        "multi-modal",
+        "vision-language",
+        "vision language model",
+        "vlm",
+        "text-to-image"
+      ]
+    },
+    {
+      "tag": "graph-learning",
+      "label": "Graph learning",
+      "official_topics": [
+        "ML: Graph-based Machine Learning",
+        "DMKM: Graph Mining"
+      ],
+      "aliases": [
+        "graph neural network",
+        "gnn",
+        "graph representation",
+        "node classification",
+        "link prediction"
+      ]
+    },
+    {
+      "tag": "federated-learning",
+      "label": "Federated & distributed learning",
+      "official_topics": [
+        "ML: Distributed Machine Learning & Federated"
+      ],
+      "aliases": [
+        "federated learning",
+        "federated",
+        "split learning"
+      ]
+    },
+    {
+      "tag": "time-series",
+      "label": "Time series & spatio-temporal",
+      "official_topics": [
+        "ML: Time-Series",
+        "DMKM: Mining of Spatial, Temporal"
+      ],
+      "aliases": [
+        "time series",
+        "time-series",
+        "forecasting",
+        "spatio-temporal",
+        "spatiotemporal",
+        "traffic prediction"
+      ]
+    },
+    {
+      "tag": "nlp",
+      "label": "Natural language processing",
+      "official_topics": [
+        "NLP:"
+      ],
+      "aliases": [
+        "natural language",
+        "machine translation",
+        "question answering",
+        "text classification",
+        "summarization",
+        "named entity"
+      ]
+    },
+    {
+      "tag": "computer-vision",
+      "label": "Computer vision",
+      "official_topics": [
+        "CV:"
+      ],
+      "aliases": [
+        "image segmentation",
+        "object detection",
+        "semantic segmentation",
+        "image classification",
+        "video understanding",
+        "person re-identification"
+      ]
+    },
+    {
+      "tag": "fairness-ethics",
+      "label": "Fairness, ethics & society",
+      "official_topics": [
+        "ML: Ethics, Bias, and Fairness",
+        "CV: Bias, Fairness",
+        "PEAI:"
+      ],
+      "aliases": [
+        "fairness",
+        "bias mitigation",
+        "algorithmic bias",
+        "ai ethics",
+        "privacy-preserving",
+        "differential privacy"
+      ]
+    },
+    {
+      "tag": "ai-for-science",
+      "label": "AI for science",
+      "official_topics": [
+        "APP: Natural Sciences"
+      ],
+      "aliases": [
+        "protein",
+        "molecule",
+        "molecular",
+        "drug discovery",
+        "antibody",
+        "materials",
+        "climate",
+        "physics-informed"
+      ]
+    },
+    {
+      "tag": "planning-reasoning",
+      "label": "Planning & reasoning",
+      "official_topics": [
+        "PRS:",
+        "KRR:",
+        "CSO:"
+      ],
+      "aliases": [
+        "planning",
+        "theorem proving",
+        "logical reasoning",
+        "constraint satisfaction",
+        "satisfiability",
+        "heuristic search"
+      ]
+    },
+    {
+      "tag": "knowledge-graphs",
+      "label": "Knowledge graphs",
+      "official_topics": [
+        "DMKM: Linked Open Data, Knowledge Graphs"
+      ],
+      "aliases": [
+        "knowledge graph",
+        "knowledge graphs",
+        "knowledge base",
+        "entity alignment",
+        "kg completion"
+      ]
+    },
+    {
+      "tag": "recommender-systems",
+      "label": "Recommender systems",
+      "official_topics": [
+        "DMKM: Recommender Systems"
+      ],
+      "aliases": [
+        "recommendation",
+        "recommender",
+        "collaborative filtering",
+        "click-through"
+      ]
+    },
+    {
+      "tag": "safety-security",
+      "label": "Safety, robustness & security",
+      "official_topics": [
+        "APP: Security",
+        "ML: Adversarial Learning & Robustness",
+        "CV: Adversarial Attacks"
+      ],
+      "aliases": [
+        "adversarial attack",
+        "adversarial robustness",
+        "jailbreak",
+        "backdoor",
+        "watermark",
+        "alignment",
+        "red teaming"
+      ]
+    },
+    {
+      "tag": "healthcare",
+      "label": "Healthcare & medicine",
+      "official_topics": [
+        "APP: Healthcare",
+        "CV: Medical and Biological Imaging"
+      ],
+      "aliases": [
+        "medical",
+        "clinical",
+        "healthcare",
+        "patient",
+        "disease",
+        "ehr",
+        "radiology"
+      ]
+    }
+  ],
+  "meeting_points": [
+    {
+      "point_id": "mp-exhibit-hall-e",
+      "label": "Exhibit Hall E, 200 Level, West Building, Pennsylvania Convention Center",
+      "description": "Official AAAI-25 poster session venue (Thu Feb 27 - Sat Mar 1, 12:30-2:30 pm).",
+      "source_url": "https://aaai.org/conference/aaai/aaai-25/poster-sessions/"
+    },
+    {
+      "point_id": "mp-level-200-west",
+      "label": "Level 200, West Building, Pennsylvania Convention Center",
+      "description": "Public concourse level of the poster venue named on the official poster page.",
+      "source_url": "https://aaai.org/conference/aaai/aaai-25/poster-sessions/"
+    }
+  ],
+  "source_references": [
+    {
+      "ref_id": "src-proceedings",
+      "title": "Proceedings of the AAAI Conference on Artificial Intelligence, Vol. 39 (AAAI-25)",
+      "url": "https://aaai.org/proceeding/aaai-39-2025/",
+      "manifest_key": "proceeding_index.html"
+    },
+    {
+      "ref_id": "src-ojs-toc",
+      "title": "AAAI OJS issue tables of contents, vol. 39 nos. 1-28",
+      "url": "https://ojs.aaai.org/index.php/AAAI/issue/archive",
+      "manifest_key": "ojs/issue_624.html"
+    },
+    {
+      "ref_id": "src-hf-metadata",
+      "title": "ai-conferences/AAAI2025 dataset (Hugging Face)",
+      "url": "https://huggingface.co/datasets/ai-conferences/AAAI2025",
+      "manifest_key": "hf_aaai2025_train.parquet"
+    },
+    {
+      "ref_id": "src-main-track-page",
+      "title": "AAAI-25 Main Technical Track (schedules)",
+      "url": "https://aaai.org/conference/aaai/aaai-25/main-technical-track/",
+      "manifest_key": "main_technical_track.html"
+    },
+    {
+      "ref_id": "src-oral-schedule",
+      "title": "AAAI-25 Main Track Oral Talks Schedule (2.22)",
+      "url": "https://aaai.org/wp-content/uploads/2025/02/AAAI-25-Main-Track-Oral-Talks-Schedule-2.22.pdf",
+      "manifest_key": "oral_main_track_2025-02-22.pdf"
+    },
+    {
+      "ref_id": "src-poster-main",
+      "title": "AAAI-25 Main Track Poster Schedule (2.21)",
+      "url": "https://aaai.org/wp-content/uploads/2025/02/AAAI-25-Main-Track-Poster-Schedule-2.21.pdf",
+      "manifest_key": "poster_main_track_2025-02-21.pdf"
+    },
+    {
+      "ref_id": "src-poster-sat-0227",
+      "title": "AAAI-25 Saturday Poster Schedule (2.27.25)",
+      "url": "https://aaai.org/wp-content/uploads/2025/02/AAAI-25-Saturday-Poster-Schedule-2.27.25.pdf",
+      "manifest_key": "poster_saturday_2025-02-27.pdf"
+    },
+    {
+      "ref_id": "src-poster-sat-0122",
+      "title": "AAAI-25 Poster Schedule, Saturday only (2025-01-22, superseded)",
+      "url": "https://aaai.org/wp-content/uploads/2025/01/AAAI-25-Poster-Schedule_2025-01-22_Saturday-Only.pdf",
+      "manifest_key": "poster_saturday.pdf"
+    },
+    {
+      "ref_id": "src-poster-venue",
+      "title": "AAAI-25 Poster Sessions (venue and hours)",
+      "url": "https://aaai.org/conference/aaai/aaai-25/poster-sessions/",
+      "manifest_key": "poster_sessions.html"
+    }
+  ]
+}

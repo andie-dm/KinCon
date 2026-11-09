@@ -25,6 +25,20 @@ spec:
           env:
             - name: TEAM_NAME
               value: "__TEAM__"
+            # Elastic settings live in Secret app-credentials, created outside git
+            # (examples/agent-workflows/README.md). Optional so pods start before it exists.
+            - name: ELASTICSEARCH_URL
+              valueFrom:
+                secretKeyRef:
+                  name: app-credentials
+                  key: elasticsearch-url
+                  optional: true
+            - name: ELASTIC_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: app-credentials
+                  key: elastic-api-key
+                  optional: true
           resources:
             requests:
               cpu: 100m
