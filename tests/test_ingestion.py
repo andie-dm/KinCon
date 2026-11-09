@@ -174,6 +174,11 @@ def test_live_index_counts(es):
     assert by["true"] == 3028
     assert r["aggregations"]["doi"]["value"] == r["hits"]["total"]["value"]  # one doc per DOI
     assert r["aggregations"]["dups"]["buckets"] == []
+    # Every paper carries embeddings (a bulk upsert body silently skips inference on ES 9.5).
+    assert es.request("POST", f"/{M.PAPERS}/_count", {"query": {"exists": {"field": "research_text"}}})["count"] == r["hits"]["total"]["value"]
+    hit = es.search(M.PAPERS, {"size": 1, "_source": False, "query": {"semantic": {"field": "research_text",
+                    "query": "consistency flow matching 3D robot manipulation policy"}}})["hits"]["hits"]
+    assert hit and hit[0]["_id"] == FLOWPOLICY
 
 
 # 8. Repeated imports do not duplicate papers or occurrences.

@@ -1,6 +1,13 @@
 # AAAI-25 import report
 
-Run 2026-11-09 against a **local** single-node Elasticsearch 9.1.0 (Docker, trial license, inference endpoint `.multilingual-e5-small-elasticsearch`). No hosted Elastic deployment was configured in this environment: `ELASTICSEARCH_URL` / `ELASTIC_API_KEY` were unset. Pointing the same commands at the team's deployment is the remaining step (see the end of this file). Machine-readable details are in `paper_coverage.json` and `schedule_coverage.json`.
+Run 2026-11-09 against two clusters, with identical results:
+
+- **Hosted Elastic Cloud** (GCP us-central1): Elasticsearch 9.5.6, Enterprise license, inference endpoint `.elser-2-elastic` (Elastic Inference Service, billed per token; `.elser-2-elasticsearch` cannot start because the deployment has no ML nodes).
+- **Local** single-node Elasticsearch 9.1.0 (Docker, trial license, `.multilingual-e5-small-elasticsearch`), used during development.
+
+Machine-readable details: `paper_coverage.json`, `schedule_coverage.json`.
+
+**Hosted incident (fixed).** The first hosted import stored all 3,486 papers without embeddings, so semantic retrieval on papers returned nothing while the keyword branch of RRF still answered. Cause: on ES 9.5, a bulk `update` that *creates* a document from a separate `upsert` body skips `semantic_text` inference (verified on a scratch index; `index`, `create` and `doc_as_upsert` all embed). The importer and seeder now write new documents with `create` and existing ones with a partial `doc` update. A forced re-import re-embedded every paper and kept the schedule occurrences: `exists research_text` = 3,486/3,486, and 30/30 sampled papers are semantically retrievable by their own title. `test_live_index_counts` now fails if any paper lacks embeddings.
 
 ## Bibliographic coverage
 
@@ -61,22 +68,12 @@ The 12:30-2:30 pm Exhibit Hall E block itself is confirmed by the official poste
 4. The schedules' "Paper ID" is a submission number absent from every metadata source, so it cannot serve as a join key. It is retained as `schedule_submission_id`.
 5. The HF dataset card declares no license. Raw files are cached locally (git-ignored), and the records keep source URLs and attribution.
 
-## Live checks run (all passing)
+## Live checks run (all passing on both clusters)
 
-- `python -m pytest tests`: **28 passed** with `ELASTICSEARCH_URL=http://localhost:9200`. Covers classification boundary and conflicts, DOI normalization, fallback IDs, every author surviving, unmerged equal names, distinct multiple appearances, the nested same-occurrence filter, repeat-import no-op, legacy-ID classification migration on a scratch index, fixture resolution, and unconfirmed locations.
+- `python -m pytest tests`: **28 passed** against hosted Elastic Cloud and against local ES. Covers classification boundary and conflicts, DOI normalization, fallback IDs, every author surviving, unmerged equal names, distinct multiple appearances, the nested same-occurrence filter, repeat-import no-op, legacy-ID classification migration on a scratch index, fixture resolution, and unconfirmed locations.
 - `node --test test/`: **13 passed** (6 ranking units, 7 live API scenarios through the real HTTP server). Covers RRF engine provenance and main-track-only feeds, a swipe retry being a `noop` with unchanged affinity, a pass staying excluded after reload, a changed swipe being revision 2, a save not enabling buddy visibility, a one-sided like staying private, reciprocity unlocking only Riley and Jules, a nonparticipant author never appearing, a save not joining, and the actor being session-derived.
 
-## Remaining to run against the hosted deployment
+## Remaining
 
-```bash
-export ELASTICSEARCH_URL=<deployment endpoint>
-export ELASTIC_API_KEY=<key with create_index/manage/write/read on conference-*>
-python3 scripts/setup_indexes.py --preflight   # confirm version, license (RRF needs a supporting license), inference endpoint
-python3 scripts/setup_indexes.py
-python3 scripts/import_conference_papers.py --conference AAAI-25 --limit 0
-python3 scripts/import_schedules.py
-python3 scripts/seed_social_fixtures.py
-python3 -m pytest tests && (cd app && node --test test/)
-```
-
-Then create the Kubernetes Secret `app-credentials` (keys `elasticsearch-url`, `elastic-api-key`) through Radar and restart the app.
+- Hosted data is loaded and verified. To deploy the app against it, create Secret `app-credentials` (keys `elasticsearch-url`, `elastic-api-key`) through Radar's resource editor and restart the app. The importer used `ES_INFERENCE_ID=.elser-2-elastic`.
+- The API key used for the import was shared in a chat transcript; rotate it and put the new key in the Secret.

@@ -171,9 +171,15 @@ def write_batch(es, docs: list[dict], force: bool, stats: Counter, failures: dic
         if ex and ex.get("content_hash") == d["content_hash"] and not force:
             stats["skipped_unchanged"] += 1
             continue
-        lines.append({"update": {"_index": index, "_id": _id, "retry_on_conflict": 3}})
-        lines.append({"doc": {**d, "updated_at": now}, "upsert": {**d, "ingested_at": now, "updated_at": now,
-                                                                   "schedule_status": "unscheduled", "occurrence_count": 0}})
+        # New docs use `create`: on ES 9.5 a bulk update that creates a doc from a
+        # separate `upsert` body skips semantic_text inference. Existing docs get a
+        # partial `doc` update, which keeps occurrences and re-embeds changed text.
+        if ex:
+            lines.append({"update": {"_index": index, "_id": _id, "retry_on_conflict": 3}})
+            lines.append({"doc": {**d, "updated_at": now}})
+        else:
+            lines.append({"create": {"_index": index, "_id": _id}})
+            lines.append({**d, "ingested_at": now, "updated_at": now, "schedule_status": "unscheduled", "occurrence_count": 0})
     if not lines:
         return
     pending = lines
@@ -181,7 +187,7 @@ def write_batch(es, docs: list[dict], force: bool, stats: Counter, failures: dic
         resp = es.bulk(pending)
         retry, perm = split_bulk_failures(resp)
         for it in resp["items"]:
-            op = it["update"]
+            op = next(iter(it.values()))
             if op.get("status", 500) < 300:
                 stats["created" if op.get("result") == "created" else op.get("result", "updated")] += 1
         for f in perm:
@@ -189,7 +195,7 @@ def write_batch(es, docs: list[dict], force: bool, stats: Counter, failures: dic
         if not retry:
             break
         ids = {f["_id"] for f in retry}
-        pending = [l for i in range(0, len(pending), 2) if pending[i]["update"]["_id"] in ids
+        pending = [l for i in range(0, len(pending), 2) if next(iter(pending[i].values()))["_id"] in ids
                    for l in pending[i:i + 2]]
         if attempt == 3:
             failures["retryable_exhausted"].extend(retry)

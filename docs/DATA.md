@@ -17,7 +17,7 @@ A schedule listing says where a paper is scheduled. It never claims that a named
 pip install -r requirements.txt
 export ELASTICSEARCH_URL=...        # e.g. http://localhost:9200 or your Elastic Cloud endpoint
 export ELASTIC_API_KEY=...          # omit for an unsecured local node
-export ES_INFERENCE_ID=.multilingual-e5-small-elasticsearch   # default; see "Semantic search"
+export ES_INFERENCE_ID=.elser-2-elastic   # hosted (EIS); local default is .multilingual-e5-small-elasticsearch
 
 python3 scripts/fetch_sources.py            # cache sources in data/raw (git-ignored), write manifest.json
 python3 scripts/setup_indexes.py --preflight  # version, license, inference endpoint probe

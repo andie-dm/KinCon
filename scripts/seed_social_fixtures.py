@@ -214,9 +214,17 @@ def main() -> int:
         print(f"reset demo actions: deleted {r.get('deleted')} actions by {demo}")
 
     lines = []
+    present = {}
+    for index, ids in ((M.EVENTS, [EVENT_ID]), (M.PEOPLE, [d["profile_id"] for d in profile_docs]),
+                       (M.GROUPS, [d["group_id"] for d in group_docs])):
+        present[index] = {d["_id"] for d in es.mget(index, ids, source=["updated_at"])["docs"] if d.get("found")}
+
     def up(index, _id, doc):
-        lines.extend([{"update": {"_index": index, "_id": _id}},
-                      {"doc": doc, "upsert": {**doc, "created_at": now}}])
+        # `create` for new docs: a bulk upsert body skips semantic_text inference on ES 9.5.
+        if _id in present[index]:
+            lines.extend([{"update": {"_index": index, "_id": _id}}, {"doc": doc}])
+        else:
+            lines.extend([{"create": {"_index": index, "_id": _id}}, {**doc, "created_at": now}])
     up(M.EVENTS, EVENT_ID, event_doc)
     for d in profile_docs:
         up(M.PEOPLE, d["profile_id"], d)
