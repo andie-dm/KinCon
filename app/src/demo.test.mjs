@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { findCard } from './fixtures.mjs';
+import { findCard, identities } from './fixtures.mjs';
 import { actionKey, affinity, conversation, feed, freshState, incomingRequests, introFor, isMatched, parseState, requestStatus, respond, sendMessage, swipe } from './demo.mjs';
 
 test('passes and saves survive serialization and repeated swipes have one effect', () => {
@@ -135,4 +135,25 @@ test('a fresh demo has dummy requests to accept, decline and open', () => {
   assert.equal(conversation(migrated, 'alex', 'sam').length, 2);
   const old = parseState(JSON.stringify({ ...blankState(), seededRequests: undefined }));
   assert.deepEqual(incomingRequests(old, 'alex'), ['sam', 'maya', 'leo']);
+});
+
+test('every attendee is playable, so any request can be answered by its recipient', () => {
+  assert.equal(identities.length, 12);
+  assert.deepEqual(identities.slice(0, 2).map((p) => p.id), ['alex', 'jules']);
+  let state = freshState();
+  // Alex sends requests to several people who are not Jules.
+  for (const id of ['kai', 'tess', 'nia', 'rory']) state = swipe(state, 'alex', findCard('people', id), 'right');
+  for (const id of ['kai', 'tess', 'nia', 'rory']) assert.ok(incomingRequests(state, id).includes('alex'), `${id} sees Alex's request`);
+  state = respond(state, 'nia', 'alex', 'accepted');
+  state = respond(state, 'rory', 'alex', 'rejected');
+  assert.equal(isMatched(state, 'alex', 'nia'), true);
+  assert.equal(requestStatus(state, 'alex', 'rory'), 'not_accepted');
+  state = sendMessage(state, 'nia', 'alex', 'Happy to chat about efficient models!');
+  assert.equal(conversation(state, 'alex', 'nia').at(-1).from, 'nia');
+  // Each new identity starts from its own card's interests.
+  assert.match(state.profiles.nia.offers, /Climate modeling/);
+  // A demo saved with only Alex and Jules gains the other profiles on load.
+  const legacy = JSON.parse(JSON.stringify(state));
+  legacy.profiles = { alex: legacy.profiles.alex, jules: legacy.profiles.jules };
+  assert.equal(Object.keys(parseState(JSON.stringify(legacy)).profiles).length, 12);
 });

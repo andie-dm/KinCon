@@ -1,4 +1,4 @@
-import { cards, defaultProfile, identities, findCard } from './fixtures.mjs';
+import { cards, defaultProfile, identities, findCard, profileFor } from './fixtures.mjs';
 
 export const STORAGE_KEY = 'fowpy-demo-v1';
 
@@ -15,7 +15,7 @@ export const SEEDED_REQUESTS = [
 const conversationOf = (a, b) => [a, b].sort().join('|');
 
 export const freshState = () => ({
-  profiles: Object.fromEntries(identities.map(({ id }) => [id, { ...defaultProfile }])),
+  profiles: Object.fromEntries(identities.map(({ id }) => [id, profileFor(id)])),
   swipes: Object.fromEntries(SEEDED_REQUESTS.map(({ from, to }) => [`${from}:people:${to}`, 'right'])),
   buddies: {},
   joins: {},
@@ -53,6 +53,8 @@ export function parseState(raw) {
     throw new Error('Stored demo data is invalid. Reset the demo to continue.');
   }
   for (const { id } of identities) {
+    // Saved demos from when only Alex and Jules were playable gain the others.
+    if (!(id in state.profiles)) state.profiles[id] = profileFor(id);
     const profile = state.profiles[id];
     if (!isRecord(profile) || !Object.keys(defaultProfile).every((key) => typeof profile[key] === 'string')) {
       throw new Error('Stored demo profile is invalid. Reset the demo to continue.');
