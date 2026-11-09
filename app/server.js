@@ -61,11 +61,13 @@ function parseTokens(raw) {
   return tokens;
 }
 
-function sessionResolver(tokens) {
+function sessionResolver(tokens, publicSessions = false) {
   return function actorOf(req) {
     const auth = req.headers.authorization || '';
     const presented = auth.startsWith('Bearer ') ? auth.slice(7) : cookies(req).demo_session;
-    const identity = tokens.size ? tokens.get(presented) : presented;
+    const identity = publicSessions && demoProfile(presented)
+      ? presented
+      : tokens.size ? tokens.get(presented) : null;
     const id = demoProfile(identity);
     if (!id) throw new HttpError(401, 'a valid demo session is required: POST /api/demo/session');
     return id;
@@ -82,12 +84,12 @@ async function readJson(req) {
   try { return JSON.parse(raw); } catch { throw new HttpError(400, 'invalid JSON'); }
 }
 
-function apiRoutes(svc, es, tokens, actorOf) {
+function apiRoutes(svc, es, tokens, actorOf, publicSessions) {
   return [
     ['POST', /^\/api\/demo\/session$/, async (req, res) => {
       const { identity, token } = await readJson(req);
-      const value = tokens.size ? token : identity;
-      const resolved = tokens.size ? tokens.get(token) : identity;
+      const value = publicSessions && demoProfile(identity) ? identity : token;
+      const resolved = publicSessions && demoProfile(identity) ? identity : tokens.get(token);
       if (!demoProfile(resolved)) {
         throw new HttpError(tokens.size ? 401 : 400, tokens.size ? 'unknown demo session token'
           : `identity must be one of ${Object.keys(DEMO_SESSIONS).join(', ')}`);
@@ -204,10 +206,11 @@ function serveStatic(req, res, url) {
   });
 }
 
-function createServer({ es = client(), sessionTokens = process.env.DEMO_SESSION_TOKENS } = {}) {
+function createServer({ es = client(), sessionTokens = process.env.DEMO_SESSION_TOKENS,
+  publicSessions = process.env.DEMO_PUBLIC_SESSIONS === 'true' } = {}) {
   const svc = es ? createService(es) : null;
   const tokens = parseTokens(sessionTokens);
-  const routes = apiRoutes(svc, es, tokens, sessionResolver(tokens));
+  const routes = apiRoutes(svc, es, tokens, sessionResolver(tokens, publicSessions), publicSessions);
   return http.createServer(async (req, res) => {
     let url;
     try {

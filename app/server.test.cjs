@@ -62,3 +62,21 @@ test('production server keeps probes and starter API, and restricts static file 
   assert.equal(post.status, 405);
   assert.equal(post.headers.get('allow'), 'GET, HEAD');
 });
+
+test('public demo sessions are opt-in and only accept fictional identities', async (t) => {
+  const server = createServer({ es: {}, sessionTokens: '', publicSessions: true });
+  await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve));
+  t.after(() => new Promise((resolve) => server.close(resolve)));
+  const base = `http://127.0.0.1:${server.address().port}`;
+  const ok = await fetch(`${base}/api/demo/session`, {
+    method: 'POST', headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ identity: 'riley' }),
+  });
+  assert.equal(ok.status, 200);
+  assert.equal((await ok.json()).identity, 'riley');
+  const bad = await fetch(`${base}/api/demo/session`, {
+    method: 'POST', headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ identity: 'not-a-demo-user' }),
+  });
+  assert.equal(bad.status, 400);
+});

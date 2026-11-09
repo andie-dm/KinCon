@@ -8,7 +8,7 @@
     "start": "node --require ./instrumentation.js server.js",
     "dev": "vite --host 127.0.0.1",
     "build": "vite build",
-    "test": "node --test src/demo.test.mjs server.test.cjs test/ranking.test.js test/server-guards.test.js test/live.test.js"
+    "test": "node --test src/demo.test.mjs src/api.test.mjs server.test.cjs test/ranking.test.js test/server-guards.test.js test/live.test.js"
   },
   "dependencies": {
     "@opentelemetry/auto-instrumentations-node": "^0.81.2",
