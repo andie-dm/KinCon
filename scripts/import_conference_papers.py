@@ -21,6 +21,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import os
 import re
 import sys
 import time
@@ -36,7 +37,8 @@ from confdata.proceedings import RAW, load_proceedings  # noqa: E402
 from confdata.tags import tag_paper  # noqa: E402
 
 ROOT = Path(__file__).resolve().parent.parent
-REPORTS = ROOT / "reports"
+# CONF_REPORTS_DIR lets tests write reports elsewhere; committed reports come from full runs.
+REPORTS = Path(os.environ.get("CONF_REPORTS_DIR") or ROOT / "reports")
 HF_DATASET = "ai-conferences/AAAI2025"
 HF_URL = "https://huggingface.co/datasets/ai-conferences/AAAI2025"
 MAIN_VOLUME, MAIN_ISSUES = 39, range(1, 26)
@@ -313,7 +315,7 @@ def main() -> int:
         "unresolved_source_discrepancies": [],
         "abstract_missing": sum(1 for d in docs if not d["abstract"]),
     }
-    REPORTS.mkdir(exist_ok=True)
+    REPORTS.mkdir(parents=True, exist_ok=True)
     out = REPORTS / ("paper_coverage.dry_run.json" if args.dry_run else "paper_coverage.json" if args.index == M.PAPERS
                      else f"paper_coverage.{args.index}.json")
     out.write_text(json.dumps(report, indent=2), "utf-8")

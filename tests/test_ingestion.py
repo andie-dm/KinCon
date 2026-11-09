@@ -155,8 +155,17 @@ def test_occurrence_ids_deterministic():
 
 # ------------------------------------------------------------------ live
 
+_REPORT_DIR = None
+
+
 def _run(*args):
-    return subprocess.run([sys.executable, *args], cwd=ROOT, capture_output=True, text=True, timeout=1800)
+    # Live tests must never overwrite the committed full-run reports in reports/.
+    global _REPORT_DIR
+    if _REPORT_DIR is None:
+        import tempfile
+        _REPORT_DIR = tempfile.mkdtemp(prefix="conf-reports-")
+    env = {**os.environ, "CONF_REPORTS_DIR": _REPORT_DIR}
+    return subprocess.run([sys.executable, *args], cwd=ROOT, capture_output=True, text=True, timeout=1800, env=env)
 
 
 @pytest.fixture(scope="module")
@@ -182,6 +191,15 @@ def test_live_index_counts(es):
 
 
 # 8. Repeated imports do not duplicate papers or occurrences.
+@live
+def test_live_runs_do_not_touch_committed_reports(es):
+    committed = (ROOT / "reports" / "paper_coverage.json").read_bytes()
+    r = _run("scripts/import_conference_papers.py", "--conference", "AAAI-25", "--limit", "3")
+    assert r.returncode == 0, r.stderr[-2000:]
+    assert (ROOT / "reports" / "paper_coverage.json").read_bytes() == committed
+    assert (Path(_REPORT_DIR) / "paper_coverage.json").exists()
+
+
 @live
 def test_live_repeat_import_is_noop(es):
     before = es.request("GET", f"/{M.PAPERS}/_count")["count"]
