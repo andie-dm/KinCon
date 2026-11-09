@@ -2,6 +2,7 @@ import React, { useEffect, useId, useMemo, useRef, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import { cards, defaultProfile, findCard, identities, intents, preferences } from './fixtures.mjs';
 import { actionKey, feed, freshState, introFor, isMatched, isSaved, parseState, STORAGE_KEY, swipe } from './demo.mjs';
+import Chat from './Chat.jsx';
 import './styles.css';
 
 function Icon({ name, size = 20, ...props }) {
@@ -20,6 +21,7 @@ function Icon({ name, size = 20, ...props }) {
     settings: <><path d="M4 7h16M4 17h16" /><circle cx="9" cy="7" r="3" /><circle cx="16" cy="17" r="3" /></>,
     check: <path d="m5 12 4 4L19 6" />,
     copy: <><rect x="8" y="8" width="12" height="13" rx="2" /><path d="M15 8V3H3v13h5" /></>,
+    chat: <path d="M20 4H4v12h4v4l5-4h7z" />,
     undo: <><path d="M4 10h10a6 6 0 0 1 0 12M4 10l5-5m-5 5 5 5" /></>,
   };
   return <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" {...props}>{paths[name] || paths.spark}</svg>;
@@ -230,6 +232,7 @@ function App() {
       <span className="nav-label">MAKE A CONNECTION</span>
       <nav className="main-nav" aria-label="Main navigation">
         {[['discover', 'discover', 'Discover'], ['saved', 'saved', 'Saved'], ['matches', 'people', 'Matches']].map(([id, icon, label]) => <button key={id} className={view === id ? 'nav-item active' : 'nav-item'} onClick={() => setView(id)}><Icon name={icon} /><span>{label}</span>{id !== 'discover' && <span className="nav-count">{id === 'saved' ? saved.length : matches.length}</span>}</button>)}
+        <button className="nav-item" onClick={() => setModal({ kind: 'chat' })}><Icon name="chat" /><span>Chat</span></button>
       </nav>
       <div className="sidebar-note"><span className="little-flower">✳</span><h3>Your next great idea<br />might be a hello away.</h3><p>Stay curious. Be kind.<br />Find your kind of people.</p></div>
       <div className="sidebar-bottom"><button className="profile-link" onClick={() => setModal({ kind: 'profile' })}><Avatar person={identity} small /><span><strong>{identity.name}</strong><small>Edit interests & preferences</small></span><Icon name="settings" size={17} /></button><span className="fine">Made for conversations, not connections counts.</span></div>
@@ -237,7 +240,7 @@ function App() {
 
     <div className="workspace">
       <header className="topbar"><span><span className="tiny-flower">✳</span> A little curiosity goes a long way.</span><div className="topbar-actions"><button className="icon-button" aria-label="Edit interests and preferences" onClick={() => setModal({ kind: 'profile' })}><Icon name="settings" size={17} /></button><label className="identity-picker"><span>Demo as</span><select aria-label="Demo identity" value={actor} onChange={(event) => switchActor(event.target.value)}>{identities.map((person) => <option value={person.id} key={person.id}>{person.name.split(' ')[0]}</option>)}</select></label></div></header>
-      <div className="demo-banner"><span className="demo-pill">LOCAL DEMO</span><span>Fictional data. Historical replay. Nothing is sent to anyone.</span></div>
+      <div className="demo-banner"><span className="demo-pill">LOCAL DEMO</span><span>Discovery uses fictional profiles. Chat uses separate demo sign-in.</span></div>
       {error && <div className="error-banner" role="alert">{error}<button onClick={() => setModal({ kind: 'reset' })}>Reset local data</button></div>}
 
       <div className="content-grid">
@@ -310,6 +313,7 @@ function App() {
     <div className="toast-region" role="status" aria-live="polite">{notice && <div className="toast"><Icon name="check" size={18} />{notice}</div>}</div>
     {modal?.kind === 'profile' && <Modal title="Make this conference yours." onClose={() => setModal(null)} wide><ProfileForm key={actor} profile={profile} onSave={(values) => { if (commit({ ...state, profiles: { ...state.profiles, [actor]: values } })) { setModal(null); setNotice('Discovery updated. Your interests and preferences are saved.'); } }} /></Modal>}
     {(modal?.kind === 'detail' || modal?.kind === 'match') && <Modal title={modal.kind === 'match' && modalMatched ? 'A little mutual curiosity.' : modal.card.title} onClose={() => setModal(null)}>{modal.kind === 'match' && modalMatched && <div className="match-celebration"><Avatar person={identity} /><span><Icon name="heart" size={26} /></span><Avatar person={modal.card} /><p>You and {modal.card.title.split(' ')[0]} both chose to connect.</p></div>}{detailBody(modal.card)}</Modal>}
+    {modal?.kind === 'chat' && <Modal title="Chat" onClose={() => setModal(null)}><Chat /></Modal>}
     {modal?.kind === 'reset' && <Modal title="A fresh start?" onClose={() => setModal(null)}><p className="muted">This clears both demo identities, saved items, passes, matches, and introductions in this browser. Nothing on a server is changed.</p><button className="button primary full" onClick={() => {
       try { localStorage.removeItem(STORAGE_KEY); setState(freshState()); setError(''); setLastAction(null); setPaperId(null); setModal(null); setView('discover'); setNotice('Local demo reset. A fresh set of possibilities.'); }
       catch (failure) { setError(`Cannot reset browser storage: ${failure.message}`); }

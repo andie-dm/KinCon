@@ -60,6 +60,8 @@ Dash0 telemetry uses OpenTelemetry for HTTP traces and metrics. Set `OTEL_EXPORT
 
 Demo sessions: with `DEMO_SESSION_TOKENS=riley=<token>,jules=<token>` set (Secret key `demo-session-tokens`), send `Authorization: Bearer <token>`, or `POST /api/demo/session {"token":"<token>"}` to get a session cookie. Without tokens the demo runs in open mode and `POST /api/demo/session {"identity":"riley"|"jules"}` picks one of the two fictional identities. The actor always comes from the session, never from the request body. Full contract and privacy rules: [docs/DATA.md](docs/DATA.md).
 
+**Chat demo:** With Elasticsearch, the social fixtures, and both demo tokens configured, open **Chat** in two separate browser profiles. Sign in as Riley in one and Jules in the other. Click **Connect** on both sides, then send a message. Chat shows the latest 100 messages and refreshes while open. The local discovery identity picker uses separate browser data.
+
 - `PUT /api/me` saves onboarding choices (intent, offers, asks, tags, stage, conversation preference).
 - `GET /api/feed?deck=research|people|groups[&paperId][&format=oral|poster]` returns up to 30 ranked cards from Elasticsearch RRF and hides cards the viewer already swiped. Add `paperId` to find poster buddies.
 - `PUT /api/swipes/{paper|person|group}/{id}` (plural forms also accepted) takes `{"direction":"left"|"right"}`; an identical retry is a no-op.

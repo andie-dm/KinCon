@@ -83,6 +83,22 @@ async function readJson(req) {
 }
 
 function apiRoutes(svc, es, tokens, actorOf) {
+  function chatActor(req) {
+    if (!tokens.size) throw new HttpError(503, 'Chat requires authenticated demo sessions.');
+    return actorOf(req);
+  }
+
+  function chatPeer(actor) {
+    return Object.values(DEMO_SESSIONS).find((id) => id !== actor);
+  }
+
+  function chatPair(req, target) {
+    const actor = chatActor(req);
+    const other = chatPeer(actor);
+    if (target !== encodeURIComponent(other)) throw new HttpError(404, 'Chat participant not found.');
+    return [actor, other];
+  }
+
   return [
     ['POST', /^\/api\/demo\/session$/, async (req, res) => {
       const { identity, token } = await readJson(req);
@@ -131,6 +147,16 @@ function apiRoutes(svc, es, tokens, actorOf) {
     ['PUT', /^\/api\/matches\/([^/]+)\/opener$/, async (req, res, m) => {
       const body = await readJson(req);
       send(res, 200, await svc.editOpener(actorOf(req), decodeURIComponent(m[1]), body.opener));
+    }],
+    ['GET', /^\/api\/chat$/, async (req, res) => {
+      const actor = chatActor(req);
+      send(res, 200, await svc.chatStatus(actor, chatPeer(actor)));
+    }],
+    ['GET', /^\/api\/matches\/([^/]+)\/messages$/, async (req, res, m) => {
+      send(res, 200, await svc.messages(...chatPair(req, m[1])));
+    }],
+    ['POST', /^\/api\/matches\/([^/]+)\/messages$/, async (req, res, m) => {
+      send(res, 201, await svc.sendMessage(...chatPair(req, m[1]), await readJson(req)));
     }],
     ['GET', /^\/api\/me\/saved$/, async (req, res) => send(res, 200, await svc.saved(actorOf(req)))],
   ];
