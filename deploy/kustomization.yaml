@@ -11,4 +11,4 @@ resources:
 images:
   - name: app
     newName: ghcr.io/andie-dm/fowpy
-    newTag: 28a58c1
+    newTag: 6967c79
