@@ -89,6 +89,36 @@ function ProfileForm({ profile, onSave }) {
   </form>;
 }
 
+function ProfileSourcesForm({ onSave, onSkip }) {
+  const [values, setValues] = useState({ scholar: '', linked: '' });
+  const [message, setMessage] = useState('');
+  function submit(event) {
+    event.preventDefault();
+    const sources = {};
+    for (const [key, value] of Object.entries(values)) {
+      const trimmed = value.trim();
+      if (!trimmed) continue;
+      try {
+        const url = new URL(trimmed);
+        if (!['http:', 'https:'].includes(url.protocol)) throw new Error('unsupported protocol');
+        sources[key] = url.toString();
+      } catch {
+        setMessage('Please use full http:// or https:// profile URLs, or skip for the demo profiles.');
+        return;
+      }
+    }
+    onSave(sources);
+  }
+  return <form onSubmit={submit}>
+    <p className="muted">Start with your public research links. They stay in memory for this visit only and are cleared when you reload.</p>
+    <label className="field">Google Scholar profile URL<input type="url" value={values.scholar} onChange={(event) => setValues((current) => ({ ...current, scholar: event.target.value }))} placeholder="https://scholar.google.com/citations?user=..." /></label>
+    <label className="field">Linked profile URL<input type="url" value={values.linked} onChange={(event) => setValues((current) => ({ ...current, linked: event.target.value }))} placeholder="https://www.linkedin.com/in/your-name" /></label>
+    {message && <p className="error-copy" role="alert">{message}</p>}
+    <div className="request-actions"><button className="button pass-button" type="button" onClick={onSkip}>Skip for now</button><button className="button primary" type="submit">Use these links <Icon name="arrow" /></button></div>
+    <p className="fine">This demo does not scrape or store these pages. It uses the links as session context; the enrichment plan is documented below.</p>
+  </form>;
+}
+
 function ChatWindow({ me, other, thread, draft, onSend }) {
   const endRef = useRef(null);
   const [text, setText] = useState(thread.length ? '' : draft);
@@ -111,6 +141,7 @@ function ChatWindow({ me, other, thread, draft, onSend }) {
 function App() {
   const [state, setState] = useState(() => ({ ...freshState(), cards: [], feeds: {}, savedCards: [], notifications: [] }));
   const [error, setError] = useState('');
+  const [profileSources, setProfileSources] = useState(null);
   const [actor, setActor] = useState('riley');
   const [view, setView] = useState('discover');
   const [deck, setDeck] = useState('research');
@@ -149,13 +180,16 @@ function App() {
     savedCards: [...savedData.research, ...savedData.groups, ...savedData.matches].map(normalizeCard), notifications: notifications.requests || [] }));
   }
   function commit(next) { setState(next); return true; }
-  useEffect(() => { loadApp().then((loaded) => {
+  useEffect(() => {
+    if (profileSources === null) return;
+    loadApp().then((loaded) => {
     setActor(loaded.identity);
     setState((previous) => ({ ...previous, profiles: { ...previous.profiles, [loaded.identity]: {
       intent: loaded.profile.intent || defaultProfile.intent, offers: (loaded.profile.offers || []).join(', '), asks: (loaded.profile.asks || []).join(', '),
       preference: loaded.profile.conversation_preference || defaultProfile.preference,
     } }, cards: loaded.cards, feeds: { research: loaded.cards.filter((c) => c.type === 'research'), people: loaded.cards.filter((c) => c.type === 'people'), groups: loaded.cards.filter((c) => c.type === 'groups') }, savedCards: loaded.saved, notifications: loaded.notifications.requests || [] }));
-  }).catch((failure) => setError(`Backend unavailable: ${failure.message}`)); }, []);
+      setState((previous) => ({ ...previous, profileSources }));
+  }).catch((failure) => setError(`Backend unavailable: ${failure.message}`)); }, [profileSources]);
   useEffect(() => {
     if (modal?.kind !== 'chat') return;
     api.messages(modal.card.id).then((result) => setState((previous) => ({
@@ -266,6 +300,10 @@ function App() {
     </>;
   }
 
+  if (profileSources === null) {
+    return <div className="app-shell"><main className="startup-shell"><div className="startup-card"><span className="brand-mark"><Icon name="spark" size={25} /></span><p className="eyebrow">WELCOME TO KINCON</p><h1>Bring your research<br /><span>starting point.</span></h1><ProfileSourcesForm onSave={setProfileSources} onSkip={() => setProfileSources({})} /></div></main></div>;
+  }
+
   return <div className="app-shell">
     <aside className="sidebar">
       <a className="brand" href="/" aria-label="KinCon home"><span className="brand-mark"><Icon name="spark" size={25} /></span>KinCon<span className="brand-period">.</span></a>
@@ -280,7 +318,7 @@ function App() {
 
     <div className="workspace">
       <header className="topbar"><span><span className="tiny-flower">✳</span> A little curiosity goes a long way.</span><div className="topbar-actions"><button className="icon-button notify-button" aria-label={`Chat requests${requests.length ? `, ${requests.length} new` : ''}`} onClick={() => setModal({ kind: 'requests' })}><Icon name="bell" size={17} />{requests.length > 0 && <span className="notify-badge">{requests.length}</span>}</button><button className="icon-button" aria-label="Edit interests and preferences" onClick={() => setModal({ kind: 'profile' })}><Icon name="settings" size={17} /></button><label className="identity-picker"><span>Demo as</span><select aria-label="Demo identity" value={actor} onChange={(event) => switchActor(event.target.value)}>{['riley', 'jules'].map((id) => <option value={id} key={id}>{id[0].toUpperCase() + id.slice(1)}</option>)}</select></label></div></header>
-      <div className="demo-banner"><span className="demo-pill">LOCAL DEMO</span><span>Fictional data. Historical replay. Chats stay in this browser.</span></div>
+      <div className="demo-banner"><span className="demo-pill">LOCAL DEMO</span><span>{Object.keys(profileSources).length ? 'Your research links are active for this visit.' : 'Using a premade demo profile for this visit.'}</span></div>
       {error && <div className="error-banner" role="alert">{error}<button onClick={() => setModal({ kind: 'reset' })}>Reset local data</button></div>}
 
       <div className="content-grid">
@@ -326,7 +364,7 @@ function App() {
                   onPointerCancel={() => { gesture.current = null; setPinned(null); setDrag(0); }}>
                   {Math.abs(drag) > 40 && <div className={`swipe-stamp ${drag > 0 ? 'save' : 'pass'}`}>{drag > 0 ? (deck === 'people' ? 'INTERESTED' : 'SAVE') : 'PASS'}</div>}
                   <CardArt card={current} />
-                  <div className="card-content"><div className="card-meta"><span className="category-label"><span className="live-dot" />{deck === 'research' ? `${current.format.toUpperCase()} · RESEARCH FIXTURE` : deck === 'people' ? `${current.stage.toUpperCase()}` : 'HOSTED MEETUP · FICTIONAL'}</span><button className="icon-button" aria-label={`Details about ${current.title}`} onClick={() => setModal({ kind: 'detail', card: current })}><Icon name="arrow" size={19} /></button></div><h2>{current.title}</h2><p className="card-subtitle">{current.subtitle}</p>{deck === 'research' && <p className="byline">{current.authors}</p>}{deck === 'people' && <p className="byline">Offers {current.offers.toLowerCase()}</p>}{deck === 'groups' && <p className="byline">Hosted by {current.host} · {current.size}/{current.capacity} fixture spots</p>}<div className="tags">{current.tags.map((tag) => <span key={tag}>{tag}</span>)}</div><div className="why"><Icon name="spark" size={17} /><p>{current.reason}</p></div><div className="card-foot"><span><Icon name={deck === 'people' ? 'people' : 'pin'} size={15} />{deck === 'research' ? current.occurrences[0]?.room || 'Time or room unconfirmed' : deck === 'groups' ? current.place || 'Meeting point unconfirmed' : 'Opted in · fictional attendee'}</span><button className="text-button" onClick={() => setModal({ kind: 'detail', card: current })}>Details <Icon name="arrow" size={14} /></button></div></div>
+                  <div className="card-content"><div className="card-meta"><span className="category-label"><span className="live-dot" />{deck === 'research' ? `${(current.format || 'Research').toUpperCase()} · RESEARCH FIXTURE` : deck === 'people' ? `${(current.stage || 'Attendee').toUpperCase()}` : 'HOSTED MEETUP · FICTIONAL'}</span><button className="icon-button" aria-label={`Details about ${current.title}`} onClick={() => setModal({ kind: 'detail', card: current })}><Icon name="arrow" size={19} /></button></div><h2>{current.title}</h2><p className="card-subtitle">{current.subtitle}</p>{deck === 'research' && <p className="byline">{current.authors}</p>}{deck === 'people' && <p className="byline">Offers {(current.offers || 'conversation').toLowerCase()}</p>}{deck === 'groups' && <p className="byline">Hosted by {current.host} · {current.size || 0}/{current.capacity || 0} fixture spots</p>}<div className="tags">{(current.tags || []).map((tag) => <span key={tag}>{tag}</span>)}</div><div className="why"><Icon name="spark" size={17} /><p>{current.reason || 'A promising starting point for a thoughtful conversation.'}</p></div><div className="card-foot"><span><Icon name={deck === 'people' ? 'people' : 'pin'} size={15} />{deck === 'research' ? current.occurrences?.[0]?.room || 'Time or room unconfirmed' : deck === 'groups' ? current.place || 'Meeting point unconfirmed' : 'Opted in · fictional attendee'}</span><button className="text-button" onClick={() => setModal({ kind: 'detail', card: current })}>Details <Icon name="arrow" size={14} /></button></div></div>
                 </article>
               </div> : <div className="empty-state"><span className="empty-icon"><Icon name="spark" size={32} /></span><h2>A little room for serendipity.</h2><p>You've explored this {format !== 'All' && deck === 'research' ? format.toLowerCase() : ''} deck. Your saved discoveries are waiting for you.</p><button className="button primary" onClick={() => setView('saved')}>Open Saved <Icon name="arrow" /></button></div>}
             </section>
