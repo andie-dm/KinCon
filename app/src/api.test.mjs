@@ -22,3 +22,11 @@ test('normalizes people and groups without leaking backend-only shape assumption
   assert.equal(group.type, 'groups');
   assert.equal(group.place, 'Lobby');
 });
+
+test('normalizes incomplete cards with render-safe defaults', () => {
+  const person = normalizeCard({ type: 'person', id: 'p', display_name: 'Jules' });
+  assert.equal(person.stage, 'Attendee');
+  const paper = normalizeCard({ type: 'paper', id: 'p', title: 'Paper' });
+  assert.equal(paper.format, undefined);
+  assert.deepEqual(paper.tags, []);
+});

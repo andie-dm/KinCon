@@ -20,6 +20,15 @@ verified AAAI results. The screen is clearly labeled as a historical replay.
 
 Try Research, People and Groups; swipe horizontally, use the arrow keys outside
 form controls, or use Pass/Save. Edit your interests with the sliders button.
+On every page load, the app asks for optional Google Scholar and linked-profile
+URLs. They are kept in React memory for that visit only; skipping uses the
+premade Riley/Jules demo profiles. This first pass deliberately does not scrape
+third-party pages in the browser. A production enrichment flow should send the
+user-approved URLs to a server-side extractor, retrieve only public profile
+metadata, extract a name, affiliation, research interests, and recent topics,
+map those topics to the conference vocabulary, and show a confirmation screen
+before using them for ranking. Store the resulting session profile only in a
+short-lived session, not as a permanent profile, unless the user opts in.
 Saved posters have an explicit buddy opt-in; saving a group does not join it.
 Join in its Details screen. To try mutual matching, like Jules as Alex, switch
 **Demo as** to Jules, and like Alex in People. Switch back to Alex and open
