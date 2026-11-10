@@ -191,7 +191,7 @@ function App() {
       setState((previous) => ({ ...previous, profileSources }));
   }).catch((failure) => setError(`Backend unavailable: ${failure.message}`)); }, [profileSources]);
   useEffect(() => {
-    if (modal?.kind !== 'chat') return;
+    if (modal?.kind !== 'chat' || !isRemoteMatched(modal.card)) return;
     api.messages(modal.card.id).then((result) => setState((previous) => ({
       ...previous, messages: { ...previous.messages, [`${actor}:${modal.card.id}`]: result.messages.map((message) => ({
         from: message.sender_profile_id === actor ? actor : modal.card.id, body: message.body, at: message.created_at,
