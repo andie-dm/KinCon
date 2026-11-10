@@ -15,7 +15,9 @@ test('normalizes backend paper cards to the existing research card shape', () =>
 });
 
 test('normalizes people and groups without leaking backend-only shape assumptions', () => {
-  assert.equal(normalizeCard({ type: 'person', id: 'p', display_name: 'Jules', offers: ['Python'] }).type, 'people');
+  const person = normalizeCard({ type: 'person', id: 'p', display_name: 'Jules', stage_label: 'Graduate researcher', offers: ['Python'] });
+  assert.equal(person.type, 'people');
+  assert.equal(person.stage, 'Graduate researcher');
   const group = normalizeCard({ type: 'group', id: 'g', title: 'Meetup', meeting_point: { label: 'Lobby' } });
   assert.equal(group.type, 'groups');
   assert.equal(group.place, 'Lobby');

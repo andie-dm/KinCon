@@ -62,6 +62,7 @@ export function normalizeCard(raw) {
     title: raw.title || raw.display_name || 'Untitled',
     subtitle: raw.subtitle || raw.topic || raw.stage_label || '',
     authors: first(raw.authors) || raw.subtitle || '',
+    stage: raw.stage_label || raw.stage || 'Attendee',
     offers: first(raw.offers),
     asks: first(raw.asks),
     evidence: (raw.evidence || []).map((item) => typeof item === 'string' ? item : item.label || item.title).filter(Boolean),
